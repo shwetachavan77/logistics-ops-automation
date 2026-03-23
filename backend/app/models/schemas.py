@@ -1,7 +1,7 @@
 """Pydantic schemas for loads, calls, negotiations, and API payloads."""
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 from enum import Enum
 
@@ -76,7 +76,7 @@ class Load(BaseModel):
 
 class CarrierVerificationRequest(BaseModel):
     """Request to verify a carrier's MC number."""
-    mc_number: str = Field(..., description="Motor Carrier number to verify")
+    mc_number: Union[str, int, float] = Field(..., description="Motor Carrier number to verify")
 
 
 class CarrierVerificationResponse(BaseModel):
