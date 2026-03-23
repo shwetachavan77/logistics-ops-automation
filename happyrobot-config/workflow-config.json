@@ -1,0 +1,234 @@
+{
+  "_README": "Complete workflow configuration for HappyRobot's Inbound Carrier Sales use case. This maps to the visual workflow editor at platform.happyrobot.ai. Each entry under 'nodes' corresponds to a node you add in the editor.",
+
+  "workflow": {
+    "name": "Inbound Carrier Sales",
+    "description": "Automate inbound carrier calls: verify MC authority, match loads, negotiate pricing, transfer to sales rep, then classify and extract call data.",
+    "slug": "auto-generated-by-platform"
+  },
+
+  "nodes": [
+
+    {
+      "order": 1,
+      "type": "trigger",
+      "subtype": "inbound_call",
+      "name": "Inbound Call Trigger",
+      "config": {
+        "_how": "Go to Assets > Telephony and assign a phone number to this workflow. When a carrier calls this number, the trigger fires and creates a run.",
+        "phone_number": "Assigned in Assets > Telephony"
+      },
+      "outputs": ["caller_phone"]
+    },
+
+    {
+      "order": 2,
+      "type": "prompt",
+      "subtype": "inbound_voice_agent",
+      "name": "Carrier Sales Agent (Sarah)",
+      "config": {
+        "prompt": "See agent-prompt.md - paste contents into the Prompt field",
+        "initial_message": "Thanks for calling Apex Freight, this is Sarah. Are you looking to book a load today?",
+        "voice": "English - Professional Female (e.g., 'Lily' or 'Jessica')",
+        "llm_model": "GPT-4.1 (or latest available)",
+        "recording_disclaimer": "natural",
+        "keyterms": [
+          "MC number", "dry van", "reefer", "flatbed", "step deck",
+          "deadhead", "per mile", "RPM", "DOT", "rate con",
+          "rate confirmation", "lumper", "detention", "TONU",
+          "power only", "box truck", "liftgate", "no-touch",
+          "team drivers", "hazmat"
+        ],
+        "tools": "See tools-config.json - add 4 tools: verify_carrier, search_loads, evaluate_offer, transfer_call"
+      },
+      "outputs": ["transcript", "recording", "duration", "contact"]
+    },
+
+    {
+      "order": 3,
+      "type": "core",
+      "subtype": "ai_classify",
+      "name": "Classify Call Outcome",
+      "config": {
+        "input": "@Carrier Sales Agent (Sarah).transcript",
+        "prompt": "Classify this inbound carrier sales call based on its outcome. The call is between our AI sales agent Sarah (at Apex Freight Brokerage) and a carrier who called in looking to book a load.",
+        "tags": [
+          {
+            "name": "booked",
+            "description": "A price was agreed upon and the call was transferred to a sales rep for booking confirmation."
+          },
+          {
+            "name": "carrier_declined",
+            "description": "The carrier was verified but declined the available loads or walked away from the offered pricing."
+          },
+          {
+            "name": "no_match",
+            "description": "No loads were found matching the carrier's requested lane, equipment type, or availability dates."
+          },
+          {
+            "name": "verification_failed",
+            "description": "The carrier's MC number could not be verified - authority revoked, insurance lapsed, or not found in FMCSA."
+          },
+          {
+            "name": "negotiation_failed",
+            "description": "Negotiation went through all 3 rounds without reaching agreement on price - the carrier's offers were all below our floor."
+          }
+        ]
+      },
+      "outputs": ["classification"]
+    },
+
+    {
+      "order": 4,
+      "type": "core",
+      "subtype": "ai_classify",
+      "name": "Classify Carrier Sentiment",
+      "config": {
+        "input": "@Carrier Sales Agent (Sarah).transcript",
+        "prompt": "Classify the carrier's overall sentiment during this inbound sales call. Consider their cooperation level, tone, patience, and satisfaction throughout the conversation.",
+        "tags": [
+          {
+            "name": "positive",
+            "description": "Carrier was friendly, cooperative, and seemed satisfied with the interaction even if no deal was made."
+          },
+          {
+            "name": "neutral",
+            "description": "Carrier was business-like and matter-of-fact. Professional but not particularly warm or cold."
+          },
+          {
+            "name": "negative",
+            "description": "Carrier showed frustration, impatience, or dissatisfaction with the process, pricing, or load availability."
+          },
+          {
+            "name": "aggressive",
+            "description": "Carrier was hostile, rude, or confrontational during the call."
+          }
+        ]
+      },
+      "outputs": ["classification"]
+    },
+
+    {
+      "order": 5,
+      "type": "core",
+      "subtype": "ai_extract",
+      "name": "Extract Call Data",
+      "config": {
+        "input": "@Carrier Sales Agent (Sarah).transcript",
+        "prompt": "Extract key data points from this inbound carrier sales call at Apex Freight Brokerage. The call is between our AI agent Sarah and a carrier looking to book a load.",
+        "parameters": [
+          {
+            "name": "carrier_mc",
+            "description": "The carrier's MC number mentioned during the call",
+            "example": "482910",
+            "required": true
+          },
+          {
+            "name": "carrier_name",
+            "description": "The name of the carrier company or the individual calling",
+            "example": "Eagle Express Inc",
+            "required": false
+          },
+          {
+            "name": "load_id",
+            "description": "The load ID that was discussed during the call, if any",
+            "example": "LD-1001",
+            "required": false
+          },
+          {
+            "name": "agreed_rate",
+            "description": "The final agreed-upon rate in USD if a deal was reached. Null if no deal.",
+            "example": "2700",
+            "required": false
+          },
+          {
+            "name": "initial_offer",
+            "description": "The carrier's first price offer in USD",
+            "example": "2400",
+            "required": false
+          },
+          {
+            "name": "final_offer",
+            "description": "The carrier's last/final price offer in USD",
+            "example": "2650",
+            "required": false
+          },
+          {
+            "name": "negotiation_rounds",
+            "description": "How many rounds of price negotiation occurred (0-3)",
+            "example": "2",
+            "required": false
+          },
+          {
+            "name": "equipment_type",
+            "description": "The type of equipment the carrier mentioned having",
+            "example": "Dry Van",
+            "required": false
+          },
+          {
+            "name": "origin_requested",
+            "description": "Where the carrier said they wanted to pick up",
+            "example": "Chicago, IL",
+            "required": false
+          },
+          {
+            "name": "destination_requested",
+            "description": "Where the carrier said they wanted to deliver",
+            "example": "Dallas, TX",
+            "required": false
+          }
+        ]
+      },
+      "outputs": [
+        "carrier_mc", "carrier_name", "load_id", "agreed_rate",
+        "initial_offer", "final_offer", "negotiation_rounds",
+        "equipment_type", "origin_requested", "destination_requested"
+      ]
+    },
+
+    {
+      "order": 6,
+      "type": "core",
+      "subtype": "webhook",
+      "name": "Log Call to Backend",
+      "config": {
+        "_how": "Add a Webhook POST node. This sends all extracted + classified data to our backend API for the metrics dashboard.",
+        "method": "POST",
+        "url": "https://YOUR_API_HOST/api/calls/log",
+        "content_type": "application/json",
+        "body_mode": "raw",
+        "body": {
+          "call_id": "@run_id",
+          "carrier_mc": "@Extract Call Data.carrier_mc",
+          "carrier_name": "@Extract Call Data.carrier_name",
+          "load_id": "@Extract Call Data.load_id",
+          "outcome": "@Classify Call Outcome.classification",
+          "sentiment": "@Classify Carrier Sentiment.classification",
+          "agreed_rate": "@Extract Call Data.agreed_rate",
+          "negotiation_rounds": "@Extract Call Data.negotiation_rounds",
+          "initial_offer": "@Extract Call Data.initial_offer",
+          "final_offer": "@Extract Call Data.final_offer",
+          "call_duration_seconds": "@Carrier Sales Agent (Sarah).duration",
+          "transcript": "@Carrier Sales Agent (Sarah).transcript"
+        },
+        "authentication": {
+          "type": "none",
+          "_note": "In production, use API Key or Bearer Token auth stored in environment variables"
+        }
+      }
+    }
+  ],
+
+  "_deployment_notes": {
+    "1_setup": "Create workflow at platform.happyrobot.ai, name it 'Inbound Carrier Sales'",
+    "2_trigger": "Add trigger: select 'Inbound Call', assign a phone number from Assets > Telephony",
+    "3_agent": "Add Inbound Voice Agent node, paste prompt from agent-prompt.md",
+    "4_tools": "Add 4 tools under the agent node per tools-config.json, each with a child Webhook node pointing to your API",
+    "5_classify": "Add two AI Classify nodes for outcome and sentiment",
+    "6_extract": "Add AI Extract node for structured data extraction",
+    "7_webhook": "Add Webhook POST node to log everything to your backend",
+    "8_test": "Test with the web call feature, review transcript in Runs tab",
+    "9_publish": "Publish to Production once validated",
+    "10_api_host": "Replace YOUR_API_HOST with your deployed backend URL (e.g., your Docker host IP or domain)"
+  }
+}

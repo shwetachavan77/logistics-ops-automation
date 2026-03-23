@@ -1,0 +1,230 @@
+{
+  "_README": "Tool configurations for HappyRobot's Inbound Voice Agent. Each tool is added via the + button below the agent prompt node. Each tool has a child Webhook action node that calls our backend API.",
+
+  "tools": [
+    {
+      "_name": "verify_carrier",
+      "_step": "Add as Tool under the Inbound Voice Agent node",
+
+      "description": "Use this tool when the carrier provides their MC number at the start of the call. It checks the FMCSA database to verify the carrier is authorized to operate, has valid insurance, and is eligible to haul freight for our brokerage. You must call this tool before discussing any loads.",
+
+      "parameters": [
+        {
+          "name": "mc_number",
+          "description": "The carrier's Motor Carrier number. Usually 6 digits. The caller might say it as 'MC 123456' or just '123456'. Extract just the digits.",
+          "example": "482910",
+          "required": true
+        }
+      ],
+
+      "message": {
+        "type": "AI",
+        "description": "Tell the caller you're looking up their carrier information.",
+        "example": "Let me pull that up for you, one moment."
+      },
+
+      "hold_music": "none",
+
+      "child_nodes": [
+        {
+          "type": "webhook",
+          "method": "POST",
+          "url": "https://YOUR_API_HOST/api/verify-carrier",
+          "content_type": "application/json",
+          "body_mode": "raw",
+          "body": {
+            "mc_number": "@mc_number"
+          },
+          "authentication": {
+            "type": "none"
+          },
+          "error_handling": {
+            "ignore_5xx": false
+          }
+        }
+      ],
+
+      "_expected_response": {
+        "mc_number": "482910",
+        "is_eligible": true,
+        "carrier_name": "Eagle Express Inc",
+        "dot_number": "DOT482910",
+        "status": "AUTHORIZED",
+        "safety_rating": "Satisfactory",
+        "insurance_on_file": true,
+        "reason": null
+      }
+    },
+
+    {
+      "_name": "search_loads",
+      "_step": "Add as Tool under the Inbound Voice Agent node",
+
+      "description": "Use this tool after the carrier is verified and tells you where they want to pick up, where they're headed, and what equipment they're running. It searches our load database for available freight matching their criteria. Call this tool even if they only provide partial info (e.g., just an origin city).",
+
+      "parameters": [
+        {
+          "name": "origin",
+          "description": "The city or area where the carrier wants to pick up. Extract from phrases like 'I'm in Chicago' or 'picking up out of Dallas'.",
+          "example": "Chicago",
+          "required": false
+        },
+        {
+          "name": "destination",
+          "description": "Where the carrier wants to deliver. Extract from phrases like 'headed to Miami' or 'going down to Texas'.",
+          "example": "Dallas",
+          "required": false
+        },
+        {
+          "name": "equipment_type",
+          "description": "The type of trailer the carrier has. Common values: Dry Van, Reefer, Flatbed, Step Deck, Power Only, Box Truck.",
+          "example": "Dry Van",
+          "required": false
+        },
+        {
+          "name": "pickup_date",
+          "description": "When the carrier is available to pick up. Convert to ISO date format. If they say 'tomorrow' or 'Monday', convert to the actual date.",
+          "example": "2026-03-24",
+          "required": false
+        }
+      ],
+
+      "message": {
+        "type": "AI",
+        "description": "Tell the caller you're searching for loads on their lane.",
+        "example": "Let me see what I have available on that lane."
+      },
+
+      "hold_music": "none",
+
+      "child_nodes": [
+        {
+          "type": "webhook",
+          "method": "POST",
+          "url": "https://YOUR_API_HOST/api/search-loads",
+          "content_type": "application/json",
+          "body_mode": "raw",
+          "body": {
+            "origin": "@origin",
+            "destination": "@destination",
+            "equipment_type": "@equipment_type",
+            "pickup_date": "@pickup_date"
+          }
+        }
+      ]
+    },
+
+    {
+      "_name": "evaluate_offer",
+      "_step": "Add as Tool under the Inbound Voice Agent node",
+
+      "description": "Use this tool when the carrier makes a price offer or counter-offer for a load. Call it each time they propose a rate. The tool returns whether to accept, counter, or reject. Track the round_number yourself: start at 1, increment each time the carrier counters. Maximum 3 rounds - after round 3, the negotiation ends.",
+
+      "parameters": [
+        {
+          "name": "call_id",
+          "description": "A unique identifier for this call. Use the run ID or generate one like 'call_' followed by a random string.",
+          "example": "call_abc123",
+          "required": true
+        },
+        {
+          "name": "load_id",
+          "description": "The ID of the load being negotiated. This comes from the search_loads tool result.",
+          "example": "LD-1001",
+          "required": true
+        },
+        {
+          "name": "carrier_offer",
+          "description": "The dollar amount the carrier is offering. Just the number, no dollar sign. Extract from phrases like 'I can do it for twenty-four hundred' (= 2400).",
+          "example": "2400",
+          "required": true
+        },
+        {
+          "name": "round_number",
+          "description": "Which round of negotiation this is. Start at 1 for the carrier's first offer, 2 for their second, 3 for their third and final.",
+          "example": "1",
+          "required": true
+        }
+      ],
+
+      "message": {
+        "type": "AI",
+        "description": "Acknowledge the carrier's offer before running the evaluation.",
+        "example": "Let me see if I can make that work."
+      },
+
+      "hold_music": "none",
+
+      "child_nodes": [
+        {
+          "type": "webhook",
+          "method": "POST",
+          "url": "https://YOUR_API_HOST/api/negotiate",
+          "content_type": "application/json",
+          "body_mode": "raw",
+          "body": {
+            "call_id": "@call_id",
+            "load_id": "@load_id",
+            "carrier_offer": "@carrier_offer",
+            "round_number": "@round_number"
+          }
+        }
+      ],
+
+      "_expected_response_accepted": {
+        "accepted": true,
+        "message": "Great, $2,700.00 works for us! Let me transfer you to a sales representative to finalize the booking.",
+        "round_number": 2,
+        "final_round": true,
+        "agreed_rate": 2700
+      },
+      "_expected_response_counter": {
+        "accepted": false,
+        "counter_offer": 2850,
+        "message": "I appreciate the offer of $2,400.00, but this load is posted at $2,850.00. That's $3.10 per mile for 920 miles. Can you come up to $2,850.00?",
+        "round_number": 1,
+        "final_round": false
+      }
+    },
+
+    {
+      "_name": "transfer_call",
+      "_step": "Add as Tool under the Inbound Voice Agent node",
+
+      "description": "Use this tool ONLY after a price has been agreed upon (the evaluate_offer tool returned accepted: true). It transfers the carrier to a human sales representative to finalize the booking paperwork. If the carrier asks to speak with a human at any point, also use this tool.",
+
+      "parameters": [
+        {
+          "name": "call_id",
+          "description": "The call session identifier.",
+          "example": "call_abc123",
+          "required": true
+        },
+        {
+          "name": "carrier_name",
+          "description": "Name of the carrier company or person on the call, if mentioned.",
+          "example": "Eagle Express Inc",
+          "required": false
+        }
+      ],
+
+      "message": {
+        "type": "Fixed",
+        "text": "Great, let me get you connected with a sales rep to wrap things up."
+      },
+
+      "hold_music": "ring_tones",
+
+      "child_nodes": [
+        {
+          "type": "webhook",
+          "method": "POST",
+          "url": "https://YOUR_API_HOST/api/transfer?call_id=@call_id&carrier_name=@carrier_name",
+          "content_type": "application/json"
+        }
+      ],
+
+      "_note": "In production, you would use HappyRobot's built-in call transfer action instead of a webhook. For the web call demo, the webhook mock returns a success message."
+    }
+  ]
+}
