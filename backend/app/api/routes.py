@@ -67,7 +67,7 @@ def clean_int(val) -> Optional[int]:
 
 @router.post("/verify-carrier", response_model=CarrierVerificationResponse)
 @limiter.limit("30/minute")
-async def verify_carrier(request: CarrierVerificationRequest, request: Request):
+async def verify_carrier(request: CarrierVerificationRequest, http_request: Request):
     """Verify a carrier's MC number against FMCSA."""
     mc = clean_str(request.mc_number)
     if not mc:
@@ -80,7 +80,7 @@ async def verify_carrier(request: CarrierVerificationRequest, request: Request):
 
 @router.post("/search-loads", response_model=LoadSearchResponse)
 @limiter.limit("60/minute")
-async def search_loads(request: LoadSearchRequest, request: Request):
+async def search_loads(request: LoadSearchRequest, http_request: Request):
     """Search available loads matching carrier criteria."""
     request.origin = clean_str(request.origin)
     request.destination = clean_str(request.destination)
@@ -94,7 +94,7 @@ async def search_loads(request: LoadSearchRequest, request: Request):
 
 @router.post("/negotiate", response_model=NegotiationResponse)
 @limiter.limit("30/minute")
-async def negotiate(request: NegotiationRequest, request: Request):
+async def negotiate(request: NegotiationRequest, http_request: Request):
     """Evaluate a carrier's price offer. Max 3 rounds."""
     if request.round_number > 3:
         return NegotiationResponse(
@@ -111,7 +111,7 @@ async def negotiate(request: NegotiationRequest, request: Request):
 
 @router.post("/transfer")
 @limiter.limit("10/minute")
-async def transfer_call(request: Request, call_id: str, carrier_name: Optional[str] = None):
+async def transfer_call(http_request: Request, call_id: str, carrier_name: Optional[str] = None):
     """Mock call transfer to sales rep."""
     return {
         "status": "success",
@@ -125,7 +125,7 @@ async def transfer_call(request: Request, call_id: str, carrier_name: Optional[s
 
 @router.post("/calls/log", response_model=CallLogResponse)
 @limiter.limit("60/minute")
-async def log_call(call: CallLog, request: Request):
+async def log_call(call: CallLog, http_request: Request):
     """Log a completed call with extracted/classified data."""
     call.carrier_mc = clean_str(call.carrier_mc)
     call.carrier_name = clean_str(call.carrier_name)
@@ -142,14 +142,14 @@ async def log_call(call: CallLog, request: Request):
 
 @router.get("/metrics", response_model=DashboardMetrics)
 @limiter.limit("120/minute")
-async def get_metrics(request: Request):
+async def get_metrics(http_request: Request):
     """Aggregated metrics for the dashboard."""
     return await call_service.get_dashboard_metrics()
 
 
 @router.get("/calls/recent")
 @limiter.limit("120/minute")
-async def get_recent_calls(request: Request, limit: int = 20):
+async def get_recent_calls(http_request: Request, limit: int = 20):
     """Recent calls for the dashboard table."""
     calls = await call_service.get_recent_calls(limit)
     return {"calls": calls}
@@ -159,7 +159,7 @@ async def get_recent_calls(request: Request, limit: int = 20):
 
 @router.get("/loads")
 @limiter.limit("120/minute")
-async def get_all_loads(request: Request):
+async def get_all_loads(http_request: Request):
     """List all loads."""
     result = await load_service.search_loads(LoadSearchRequest())
     return {"loads": [l.model_dump() for l in result.loads]}
