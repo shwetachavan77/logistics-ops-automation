@@ -17,18 +17,16 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api", tags=["Carrier Sales"])
 
 
-def clean_str(val: Optional[str]) -> Optional[str]:
-    """Normalize voice agent payloads: null, 'null', '' all become None."""
+def clean_str(val):
     if val is None:
         return None
-    val = val.strip()
+    val = str(val).strip()
     if val.lower() in ("null", "none", ""):
         return None
     return val
 
 
-def clean_float(val) -> Optional[float]:
-    """Parse numeric values that might arrive as strings from voice agent."""
+def clean_float(val):
     if val is None:
         return None
     if isinstance(val, (int, float)):
@@ -44,8 +42,7 @@ def clean_float(val) -> Optional[float]:
     return None
 
 
-def clean_int(val) -> Optional[int]:
-    """Parse integer values that might arrive as strings from voice agent."""
+def clean_int(val):
     if val is None:
         return None
     if isinstance(val, int):
@@ -63,56 +60,41 @@ def clean_int(val) -> Optional[int]:
     return None
 
 
-# Carrier verification
-
 @router.post("/verify-carrier", response_model=CarrierVerificationResponse)
 @limiter.limit("30/minute")
-async def verify_carrier(request: CarrierVerificationRequest, http_request: Request):
-    """Verify a carrier's MC number against FMCSA."""
-    mc = clean_str(request.mc_number)
+async def verify_carrier(request: Request, payload: CarrierVerificationRequest):
+    mc = clean_str(payload.mc_number)
     if not mc:
         raise HTTPException(status_code=400, detail="MC number is required")
-    result = await fmcsa_service.verify_carrier(mc)
-    return result
+    return await fmcsa_service.verify_carrier(mc)
 
-
-# Load search
 
 @router.post("/search-loads", response_model=LoadSearchResponse)
 @limiter.limit("60/minute")
-async def search_loads(request: LoadSearchRequest, http_request: Request):
-    """Search available loads matching carrier criteria."""
-    request.origin = clean_str(request.origin)
-    request.destination = clean_str(request.destination)
-    request.equipment_type = clean_str(request.equipment_type)
-    request.pickup_date = clean_str(request.pickup_date)
-    result = await load_service.search_loads(request)
-    return result
+async def search_loads(request: Request, payload: LoadSearchRequest):
+    payload.origin = clean_str(payload.origin)
+    payload.destination = clean_str(payload.destination)
+    payload.equipment_type = clean_str(payload.equipment_type)
+    payload.pickup_date = clean_str(payload.pickup_date)
+    return await load_service.search_loads(payload)
 
-
-# Negotiation
 
 @router.post("/negotiate", response_model=NegotiationResponse)
 @limiter.limit("30/minute")
-async def negotiate(request: NegotiationRequest, http_request: Request):
-    """Evaluate a carrier's price offer. Max 3 rounds."""
-    if request.round_number > 3:
+async def negotiate(request: Request, payload: NegotiationRequest):
+    if payload.round_number > 3:
         return NegotiationResponse(
             accepted=False,
             message="We've reached the maximum negotiation rounds. Let me transfer you to a rep.",
-            round_number=request.round_number,
+            round_number=payload.round_number,
             final_round=True
         )
-    result = await negotiation_service.evaluate_offer(request)
-    return result
+    return await negotiation_service.evaluate_offer(payload)
 
-
-# Transfer (mock)
 
 @router.post("/transfer")
 @limiter.limit("10/minute")
-async def transfer_call(http_request: Request, call_id: str, carrier_name: Optional[str] = None):
-    """Mock call transfer to sales rep."""
+async def transfer_call(request: Request, call_id: str, carrier_name: Optional[str] = None):
     return {
         "status": "success",
         "message": "Transfer was successful and now you can wrap up the conversation.",
@@ -121,12 +103,9 @@ async def transfer_call(http_request: Request, call_id: str, carrier_name: Optio
     }
 
 
-# Call logging webhook
-
 @router.post("/calls/log", response_model=CallLogResponse)
 @limiter.limit("60/minute")
-async def log_call(call: CallLog, http_request: Request):
-    """Log a completed call with extracted/classified data."""
+async def log_call(request: Request, call: CallLog):
     call.carrier_mc = clean_str(call.carrier_mc)
     call.carrier_name = clean_str(call.carrier_name)
     call.load_id = clean_str(call.load_id)
@@ -138,34 +117,25 @@ async def log_call(call: CallLog, http_request: Request):
     return await call_service.log_call(call)
 
 
-# Dashboard metrics
-
 @router.get("/metrics", response_model=DashboardMetrics)
 @limiter.limit("120/minute")
-async def get_metrics(http_request: Request):
-    """Aggregated metrics for the dashboard."""
+async def get_metrics(request: Request):
     return await call_service.get_dashboard_metrics()
 
 
 @router.get("/calls/recent")
 @limiter.limit("120/minute")
-async def get_recent_calls(http_request: Request, limit: int = 20):
-    """Recent calls for the dashboard table."""
+async def get_recent_calls(request: Request, limit: int = 20):
     calls = await call_service.get_recent_calls(limit)
     return {"calls": calls}
 
 
-# Loads list
-
 @router.get("/loads")
 @limiter.limit("120/minute")
-async def get_all_loads(http_request: Request):
-    """List all loads."""
+async def get_all_loads(request: Request):
     result = await load_service.search_loads(LoadSearchRequest())
     return {"loads": [l.model_dump() for l in result.loads]}
 
-
-# Health check
 
 @router.get("/health")
 async def health():
