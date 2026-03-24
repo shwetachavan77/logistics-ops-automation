@@ -28,7 +28,7 @@ async def verify_carrier(mc_number: str) -> CarrierVerificationResponse:
             # FMCSA provides carrier info by docket number (MC number)
             response = await client.get(
                 f"{FMCSA_API_BASE}/carriers/docket-number/{clean_mc}",
-                params={"webKey": ""},  # Public access
+                params={"webKey": os.getenv("FMCSA_API_KEY", "")},
                 headers={"Accept": "application/json"}
             )
 
