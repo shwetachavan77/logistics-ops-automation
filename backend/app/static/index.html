@@ -270,6 +270,13 @@
       const [sortBy, setSortBy] = useState("time_desc");
       const [liveCalls, setLiveCalls] = useState(0);
 
+      const [authed, setAuthed] = useState(() => sessionStorage.getItem("dash_auth") === "1");
+      const [pw, setPw] = useState("");
+      const [authLoading, setAuthLoading] = useState(false);
+      const [authError, setAuthError] = useState("");
+
+      const getKey = () => new URLSearchParams(window.location.search).get("key") || sessionStorage.getItem("dash_key") || "";
+
       useEffect(() => {
         const poll = setInterval(async () => {
           try {
@@ -288,6 +295,7 @@
       }, []);
 
       const load = useCallback(async () => {
+        if (!authed) { setLoading(false); return; }
         if (demo) { setM(mockData()); setLoading(false); return; }
         try {
           const apiKey = getKey();
@@ -299,17 +307,12 @@
           if (mr?.ok && cr?.ok) {
             const md = await mr.json(); const cd = await cr.json();
             setM({ ...md, recent_calls: cd.calls || [] });
-          } else setM(mockData());
-        } catch { setM(mockData()); }
+          } else { setM(null); }
+        } catch { setM(null); }
         setLoading(false);
-      }, [demo]);
+      }, [demo, authed]);
 
       useEffect(() => { load(); }, [load]);
-
-      const [authed, setAuthed] = useState(() => sessionStorage.getItem("dash_auth") === "1");
-      const [pw, setPw] = useState("");
-      const [authLoading, setAuthLoading] = useState(false);
-      const [authError, setAuthError] = useState("");
 
       // Auto-auth from URL key param
       useEffect(() => {
@@ -331,8 +334,6 @@
         } catch { setAuthError("Cannot reach server"); }
         setAuthLoading(false);
       };
-
-      const getKey = () => new URLSearchParams(window.location.search).get("key") || sessionStorage.getItem("dash_key") || "";
 
       if (!authed) return React.createElement("div", { style: { background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" } },
         React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 32, width: 340, textAlign: "center" } },
@@ -357,7 +358,14 @@
         )
       );
 
-      if (!m) return null;
+      if (!m) return React.createElement("div", { style: { background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" } },
+        React.createElement("div", { style: { textAlign: "center" } },
+          React.createElement("div", { style: { fontSize: 32, marginBottom: 12 } }, "\uD83D\uDCDE"),
+          React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: C.text, marginBottom: 4 } }, "No call data yet"),
+          React.createElement("div", { style: { fontSize: 12, color: C.text3, marginBottom: 16 } }, "Make a test call from HappyRobot and refresh."),
+          React.createElement("button", { onClick: load, style: { padding: "8px 20px", borderRadius: 8, border: "none", background: C.cyan, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" } }, "Refresh")
+        )
+      );
 
       const filteredCalls = (() => {
         let calls = filter.includes("All") ? (m.recent_calls || []) : (m.recent_calls || []).filter(c => filter.includes(c.outcome));
