@@ -321,9 +321,9 @@
       const sData = Object.entries(m.calls_by_sentiment).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v, color: SC[k] || C.text3 }));
       const nData = [
         { rounds: "0", count: (m.calls_by_outcome.no_match || 0) + (m.calls_by_outcome.verification_failed || 0), color: C.text3 },
-        { rounds: "1", count: 15, color: C.cyan },
-        { rounds: "2", count: 12, color: C.blue },
-        { rounds: "3", count: 9, color: C.purple },
+        { rounds: "1", count: (m.rounds_breakdown || {})["1"] || 0, color: C.cyan },
+        { rounds: "2", count: (m.rounds_breakdown || {})["2"] || 0, color: C.blue },
+        { rounds: "3", count: (m.rounds_breakdown || {})["3"] || 0, color: C.purple },
       ];
       const totalBooked = m.calls_by_outcome.booked || 0;
       const avgCallDur = "3:05";

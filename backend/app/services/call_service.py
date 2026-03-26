@@ -176,6 +176,11 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             WHERE c.outcome = 'booked' AND c.agreed_rate IS NOT NULL
         """)
 
+        rounds_rows = await conn.fetch(
+            "SELECT negotiation_rounds, COUNT(*) as cnt FROM calls WHERE negotiation_rounds > 0 GROUP BY negotiation_rounds"
+        )
+        rounds_breakdown = {str(row["negotiation_rounds"]): row["cnt"] for row in rounds_rows}
+
         return DashboardMetrics(
             total_calls=total,
             calls_by_outcome=calls_by_outcome,
@@ -195,6 +200,7 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             loads_available=loads_available,
             loads_booked=loads_booked,
             avg_rate_per_mile=f"{float(avg_rpm):.2f}",
+            rounds_breakdown=rounds_breakdown,
         )
 
 

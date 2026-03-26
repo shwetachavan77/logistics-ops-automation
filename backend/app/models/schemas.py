@@ -255,3 +255,4 @@ class DashboardMetrics(BaseModel):
     loads_available: int = 0
     loads_booked: int = 0
     avg_rate_per_mile: str = "0.00"
+    rounds_breakdown: dict = {}
