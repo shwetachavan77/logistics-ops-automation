@@ -298,6 +298,8 @@
       const [filter, setFilter] = useState(["All"]);
       const [sortBy, setSortBy] = useState("time_desc");
       const [liveCalls, setLiveCalls] = useState(0);
+      const [allLoads, setAllLoads] = useState([]);
+      const [laneFilter, setLaneFilter] = useState(null);
 
       const [authed, setAuthed] = useState(() => sessionStorage.getItem("dash_auth") === "1");
       const [pw, setPw] = useState("");
@@ -329,14 +331,16 @@
         try {
           const apiKey = getKey();
           const headers = apiKey ? { "x-api-key": apiKey } : {};
-          const [mr, cr] = await Promise.all([
+          const [mr, cr, lr] = await Promise.all([
             fetch("/api/metrics", { headers }).catch(() => null),
             fetch("/api/calls/recent?limit=30", { headers }).catch(() => null),
+            fetch("/api/loads/all", { headers }).catch(() => null),
           ]);
           if (mr?.ok && cr?.ok) {
             const md = await mr.json(); const cd = await cr.json();
             setM({ ...md, recent_calls: cd.calls || [] });
           } else { setM(null); }
+          if (lr?.ok) { const ld = await lr.json(); setAllLoads(ld.loads || []); }
         } catch { setM(null); }
         setLoading(false);
       }, [demo, authed]);
@@ -406,6 +410,9 @@
 
       const filteredCalls = (() => {
         let calls = filter.includes("All") ? (m.recent_calls || []) : (m.recent_calls || []).filter(c => filter.includes(c.outcome));
+        if (laneFilter) {
+          calls = calls.filter(c => c.load_origin === laneFilter.origin && c.load_destination === laneFilter.destination);
+        }
         const sorters = {
           time_desc: (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
           time_asc: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
@@ -673,49 +680,64 @@
           // Lane Map + Alerts
           tab === "overview" && React.createElement("div", { style: { display: "grid", gridTemplateColumns: "3fr 2fr", gap: 12, marginTop: 12, marginBottom: 12 } },
             React.createElement(Panel, { title: "Lane Activity Map", subtitle: "Active freight corridors" },
-              React.createElement("svg", { viewBox: "0 0 960 600", style: { width: "100%", height: 280 } },
+              React.createElement("svg", { viewBox: "0 0 960 600", style: { width: "100%", height: 320 } },
                 React.createElement("defs", {},
                   React.createElement("radialGradient", { id: "glow" },
                     React.createElement("stop", { offset: "0%", stopColor: C.cyan, stopOpacity: 0.6 }),
                     React.createElement("stop", { offset: "100%", stopColor: C.cyan, stopOpacity: 0 })
                   )
                 ),
-                // US outline (simplified)
-                React.createElement("path", { d: "M150,450 L200,500 L350,510 L500,520 L600,500 L700,480 L800,420 L850,350 L830,280 L780,200 L700,150 L600,120 L500,100 L400,90 L300,100 L200,150 L150,250 Z", fill: "none", stroke: C.border, strokeWidth: 1.5 }),
+                // US continental outline (realistic simplified)
+                React.createElement("path", { d: "M130,135 L132,140 L128,155 L125,175 L120,200 L118,230 L120,260 L118,290 L122,320 L130,345 L128,365 L135,380 L140,400 L155,420 L170,435 L185,440 L200,455 L220,465 L240,470 L260,478 L280,482 L300,488 L320,492 L340,495 L360,498 L380,500 L400,502 L420,505 L440,505 L460,502 L480,498 L500,500 L520,505 L540,510 L560,505 L580,498 L600,492 L610,488 L620,480 L640,470 L660,460 L670,450 L680,445 L690,440 L695,430 L700,425 L710,420 L720,415 L730,405 L740,395 L745,380 L750,365 L760,350 L770,335 L775,320 L780,300 L785,280 L790,260 L800,240 L810,225 L820,210 L830,200 L835,190 L830,180 L820,170 L810,165 L800,168 L790,175 L785,170 L790,160 L800,150 L810,140 L800,135 L785,130 L775,128 L760,132 L750,135 L740,130 L730,125 L720,128 L710,135 L700,140 L690,138 L680,132 L670,128 L660,125 L650,122 L640,120 L620,118 L600,115 L580,112 L560,110 L540,108 L520,105 L500,102 L480,100 L460,98 L440,97 L420,96 L400,95 L380,94 L360,95 L340,97 L320,100 L300,105 L280,110 L260,118 L240,125 L220,130 L200,138 L180,142 L160,140 L145,138 Z", fill: C.surface2, stroke: C.border2, strokeWidth: 1.5, opacity: 0.6 }),
+                // State-ish internal lines for texture
+                React.createElement("line", { x1: 450, y1: 95, x2: 450, y2: 505, stroke: C.border, strokeWidth: 0.5, opacity: 0.3 }),
+                React.createElement("line", { x1: 550, y1: 108, x2: 580, y2: 498, stroke: C.border, strokeWidth: 0.5, opacity: 0.3 }),
+                React.createElement("line", { x1: 350, y1: 97, x2: 340, y2: 495, stroke: C.border, strokeWidth: 0.5, opacity: 0.3 }),
+                React.createElement("line", { x1: 650, y1: 122, x2: 670, y2: 460, stroke: C.border, strokeWidth: 0.5, opacity: 0.3 }),
+                React.createElement("line", { x1: 250, y1: 118, x2: 260, y2: 478, stroke: C.border, strokeWidth: 0.5, opacity: 0.3 }),
+                React.createElement("line", { x1: 120, y1: 260, x2: 810, y2: 225, stroke: C.border, strokeWidth: 0.5, opacity: 0.3 }),
+                React.createElement("line", { x1: 130, y1: 345, x2: 740, y2: 395, stroke: C.border, strokeWidth: 0.5, opacity: 0.3 }),
                 // City dots and lane lines from top_lanes
                 ...(m.top_lanes || []).flatMap((l, i) => {
                   const cities = {
-                    "Chicago, IL": [560, 200], "Dallas, TX": [500, 400], "Los Angeles, CA": [170, 350],
-                    "Phoenix, AZ": [230, 390], "Atlanta, GA": [640, 370], "Miami, FL": [700, 480],
-                    "Houston, TX": [480, 440], "Memphis, TN": [550, 340], "Newark, NJ": [770, 200],
-                    "Boston, MA": [800, 160], "Seattle, WA": [170, 120], "Portland, OR": [160, 160],
-                    "Denver, CO": [360, 270], "Nashville, TN": [600, 320], "Charlotte, NC": [690, 310],
-                    "Indianapolis, IN": [590, 250], "Columbus, OH": [640, 240], "Kansas City, MO": [470, 280],
-                    "St. Louis, MO": [530, 290], "Detroit, MI": [620, 190], "Philadelphia, PA": [750, 220],
-                    "Washington, DC": [730, 260], "Jacksonville, FL": [680, 420],
+                    "Chicago, IL": [560, 200], "Dallas, TX": [480, 400], "Los Angeles, CA": [145, 340],
+                    "Phoenix, AZ": [210, 390], "Atlanta, GA": [650, 370], "Miami, FL": [710, 465],
+                    "Houston, TX": [470, 440], "Memphis, TN": [555, 345], "Newark, NJ": [790, 195],
+                    "Boston, MA": [810, 165], "Seattle, WA": [145, 138], "Portland, OR": [140, 165],
+                    "Denver, CO": [350, 265], "Nashville, TN": [610, 320], "Charlotte, NC": [700, 310],
+                    "Indianapolis, IN": [590, 245], "Columbus, OH": [645, 235], "Kansas City, MO": [470, 280],
+                    "St. Louis, MO": [530, 290], "Detroit, MI": [625, 190], "Philadelphia, PA": [775, 210],
+                    "Washington, DC": [755, 240], "Jacksonville, FL": [690, 420],
+                    "Las Vegas, NV": [195, 320],
                   };
                   const from = cities[l.origin]; const to = cities[l.destination];
                   if (!from || !to) return [];
                   const cv = l.calls > 0 ? l.bookings / l.calls : 0;
                   const lineColor = cv >= 0.5 ? C.green : cv >= 0.3 ? C.amber : C.red;
                   return [
-                    React.createElement("line", { key: `l${i}`, x1: from[0], y1: from[1], x2: to[0], y2: to[1], stroke: lineColor, strokeWidth: 2, strokeOpacity: 0.6 }),
-                    React.createElement("circle", { key: `f${i}`, cx: from[0], cy: from[1], r: 5, fill: C.cyan }),
-                    React.createElement("circle", { key: `t${i}`, cx: to[0], cy: to[1], r: 5, fill: C.purple }),
-                    React.createElement("circle", { key: `fg${i}`, cx: from[0], cy: from[1], r: 12, fill: "url(#glow)" }),
+                    React.createElement("g", { key: `lane${i}`, onClick: () => { setTab("calls"); setFilter(["All"]); setLaneFilter({ origin: l.origin, destination: l.destination }); }, style: { cursor: "pointer" } },
+                      React.createElement("line", { x1: from[0], y1: from[1], x2: to[0], y2: to[1], stroke: lineColor, strokeWidth: 2.5, strokeOpacity: 0.7 }),
+                      React.createElement("line", { x1: from[0], y1: from[1], x2: to[0], y2: to[1], stroke: "transparent", strokeWidth: 15 }),
+                      React.createElement("circle", { cx: from[0], cy: from[1], r: 14, fill: "url(#glow)" }),
+                      React.createElement("circle", { cx: from[0], cy: from[1], r: 5, fill: C.cyan }),
+                      React.createElement("circle", { cx: to[0], cy: to[1], r: 14, fill: "url(#glow)" }),
+                      React.createElement("circle", { cx: to[0], cy: to[1], r: 5, fill: C.purple }),
+                      React.createElement("text", { x: from[0], y: from[1] - 10, fill: C.text2, fontSize: 8, textAnchor: "middle" }, l.origin.split(",")[0]),
+                      React.createElement("text", { x: to[0], y: to[1] - 10, fill: C.text2, fontSize: 8, textAnchor: "middle" }, l.destination.split(",")[0])
+                    ),
                   ];
                 }),
                 // Legend
-                React.createElement("circle", { cx: 40, cy: 540, r: 4, fill: C.green }),
-                React.createElement("text", { x: 50, y: 544, fill: C.text3, fontSize: 10 }, ">50% conv."),
-                React.createElement("circle", { cx: 140, cy: 540, r: 4, fill: C.amber }),
-                React.createElement("text", { x: 150, y: 544, fill: C.text3, fontSize: 10 }, "30-50%"),
-                React.createElement("circle", { cx: 220, cy: 540, r: 4, fill: C.red }),
-                React.createElement("text", { x: 230, y: 544, fill: C.text3, fontSize: 10 }, "<30%"),
-                React.createElement("circle", { cx: 310, cy: 540, r: 4, fill: C.cyan }),
-                React.createElement("text", { x: 320, y: 544, fill: C.text3, fontSize: 10 }, "Origin"),
-                React.createElement("circle", { cx: 370, cy: 540, r: 4, fill: C.purple }),
-                React.createElement("text", { x: 380, y: 544, fill: C.text3, fontSize: 10 }, "Destination")
+                React.createElement("circle", { cx: 40, cy: 560, r: 4, fill: C.green }),
+                React.createElement("text", { x: 50, y: 564, fill: C.text3, fontSize: 10 }, ">50% conv."),
+                React.createElement("circle", { cx: 140, cy: 560, r: 4, fill: C.amber }),
+                React.createElement("text", { x: 150, y: 564, fill: C.text3, fontSize: 10 }, "30-50%"),
+                React.createElement("circle", { cx: 220, cy: 560, r: 4, fill: C.red }),
+                React.createElement("text", { x: 230, y: 564, fill: C.text3, fontSize: 10 }, "<30%"),
+                React.createElement("circle", { cx: 310, cy: 560, r: 4, fill: C.cyan }),
+                React.createElement("text", { x: 320, y: 564, fill: C.text3, fontSize: 10 }, "Origin"),
+                React.createElement("circle", { cx: 370, cy: 560, r: 4, fill: C.purple }),
+                React.createElement("text", { x: 380, y: 564, fill: C.text3, fontSize: 10 }, "Destination")
               )
             ),
             React.createElement(Panel, { title: "Alerts", subtitle: "Actionable intelligence" },
@@ -758,7 +780,13 @@
                   }, f === "All" ? `All (${(m.recent_calls || []).length})` : `${OL[f] || f} (${(m.recent_calls || []).filter(c => c.outcome === f).length})`)
                 )
               ),
-              React.createElement("div", { style: { fontSize: 10, color: C.text3 } }, "Click column headers to sort")
+              React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
+                laneFilter && React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 6, background: C.cyanDim, border: `1px solid ${C.cyan}30`, fontSize: 11, color: C.cyan } },
+                  `${laneFilter.origin.split(",")[0]} \u2192 ${laneFilter.destination.split(",")[0]}`,
+                  React.createElement("button", { onClick: () => setLaneFilter(null), style: { background: "none", border: "none", color: C.cyan, cursor: "pointer", fontSize: 13, padding: "0 2px", marginLeft: 4 } }, "\u00D7")
+                ),
+                React.createElement("div", { style: { fontSize: 10, color: C.text3 } }, "Click column headers to sort")
+              )
             ),
             React.createElement(Panel, { title: "Recent Calls", subtitle: `${filteredCalls.length} calls shown. Click a row for details.` },
               filteredCalls.length === 0 ? React.createElement("div", { style: { textAlign: "center", padding: "40px 0" } },
@@ -883,6 +911,56 @@
                         )
                       );
                     })
+                  )
+            ),
+
+            // Load Board Database
+            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, marginBottom: 8 } },
+              React.createElement("div", {},
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: C.text } }, "Load Board"),
+                React.createElement("div", { style: { fontSize: 11, color: C.text3 } }, `${allLoads.length} loads in database`)
+              ),
+              React.createElement("button", {
+                onClick: async () => {
+                  if (!confirm("This will delete all loads and reseed with fresh data. Are you sure?")) return;
+                  const r = await fetch("/api/loads/reseed", { method: "POST", headers: { "x-api-key": getKey() } }).catch(() => null);
+                  if (r?.ok) { const d = await r.json(); alert(`Reseeded ${d.loads_seeded} loads with current dates.`); load(); }
+                  else alert("Reseed failed.");
+                },
+                style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.cyan}25`, background: C.cyanDim, color: C.cyan, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+              }, "Reseed Loads")
+            ),
+            React.createElement(Panel, { title: "" },
+              allLoads.length === 0
+                ? React.createElement("div", { style: { textAlign: "center", padding: "30px 0", color: C.text3, fontSize: 12 } }, "No loads in database. Click Reseed Loads to populate.")
+                : React.createElement("div", { style: { overflowX: "auto", margin: "-20px", padding: 0 } },
+                    React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 11 } },
+                      React.createElement("thead", {},
+                        React.createElement("tr", { style: { borderBottom: `1px solid ${C.border}` } },
+                          ["ID", "Origin", "Destination", "Equipment", "Rate", "Miles", "Weight", "Commodity", "Pieces", "Pickup", "Status"].map(h =>
+                            React.createElement("th", { key: h, style: { padding: "8px 10px", textAlign: "left", color: C.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" } }, h)
+                          )
+                        )
+                      ),
+                      React.createElement("tbody", {},
+                        allLoads.map((ld, i) => React.createElement("tr", {
+                          key: ld.load_id || i,
+                          style: { borderBottom: `1px solid ${C.border}` }
+                        },
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.cyan, fontWeight: 500 } }, ld.load_id),
+                          React.createElement("td", { style: { padding: "7px 10px", color: C.text } }, ld.origin),
+                          React.createElement("td", { style: { padding: "7px 10px", color: C.text } }, ld.destination),
+                          React.createElement("td", { style: { padding: "7px 10px", color: C.text2 } }, ld.equipment_type),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.green } }, ld.loadboard_rate ? `$${Math.round(parseFloat(ld.loadboard_rate)).toLocaleString()}` : "-"),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.text2 } }, ld.miles ? `${Math.round(parseFloat(ld.miles))}` : "-"),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.text2 } }, ld.weight ? `${Math.round(parseFloat(ld.weight)).toLocaleString()}` : "-"),
+                          React.createElement("td", { style: { padding: "7px 10px", color: C.text2 } }, ld.commodity_type || "-"),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.text2, textAlign: "center" } }, ld.num_of_pieces || "-"),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.text2, fontSize: 10 } }, ld.pickup_datetime ? new Date(ld.pickup_datetime).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "-"),
+                          React.createElement("td", { style: { padding: "7px 10px" } }, React.createElement(Badge, { label: ld.is_available ? "Available" : "Booked", color: ld.is_available ? C.green : C.amber }))
+                        ))
+                      )
+                    )
                   )
             )
           ),

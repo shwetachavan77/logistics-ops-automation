@@ -291,6 +291,41 @@ async def get_all_loads(request: Request):
     return {"loads": [l.model_dump() for l in result.loads]}
 
 
+@router.get("/loads/all")
+@limiter.limit("120/minute")
+async def get_all_loads_with_status(request: Request):
+    """Get all loads including booked ones, with availability status."""
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        rows = await conn.fetch("SELECT * FROM loads ORDER BY load_id")
+        return {"loads": [dict(row) for row in rows]}
+
+
+@router.post("/loads/reseed")
+@limiter.limit("5/minute")
+async def reseed_loads(request: Request):
+    """Delete all loads and reseed with fresh data and current dates."""
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        await conn.execute("DELETE FROM loads")
+    await Database.seed_loads()
+    # Update dates to start tomorrow
+    from datetime import datetime, timedelta
+    async with Database.pool.acquire() as conn:
+        earliest = await conn.fetchval("SELECT MIN(pickup_datetime) FROM loads")
+        if earliest:
+            now = datetime.utcnow()
+            tomorrow = now.replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=1)
+            shift = tomorrow - earliest
+            await conn.execute("""
+                UPDATE loads SET
+                    pickup_datetime = pickup_datetime + $1,
+                    delivery_datetime = delivery_datetime + $1
+            """, shift)
+        count = await conn.fetchval("SELECT COUNT(*) FROM loads")
+    return {"status": "ok", "loads_seeded": count}
+
+
 @router.get("/health")
 async def health():
     return {"status": "healthy", "service": "carrier-sales-api"}

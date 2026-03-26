@@ -298,6 +298,7 @@
       const [filter, setFilter] = useState(["All"]);
       const [sortBy, setSortBy] = useState("time_desc");
       const [liveCalls, setLiveCalls] = useState(0);
+      const [allLoads, setAllLoads] = useState([]);
       const [laneFilter, setLaneFilter] = useState(null);
 
       const [authed, setAuthed] = useState(() => sessionStorage.getItem("dash_auth") === "1");
@@ -330,14 +331,16 @@
         try {
           const apiKey = getKey();
           const headers = apiKey ? { "x-api-key": apiKey } : {};
-          const [mr, cr] = await Promise.all([
+          const [mr, cr, lr] = await Promise.all([
             fetch("/api/metrics", { headers }).catch(() => null),
             fetch("/api/calls/recent?limit=30", { headers }).catch(() => null),
+            fetch("/api/loads/all", { headers }).catch(() => null),
           ]);
           if (mr?.ok && cr?.ok) {
             const md = await mr.json(); const cd = await cr.json();
             setM({ ...md, recent_calls: cd.calls || [] });
           } else { setM(null); }
+          if (lr?.ok) { const ld = await lr.json(); setAllLoads(ld.loads || []); }
         } catch { setM(null); }
         setLoading(false);
       }, [demo, authed]);
@@ -908,6 +911,56 @@
                         )
                       );
                     })
+                  )
+            ),
+
+            // Load Board Database
+            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, marginBottom: 8 } },
+              React.createElement("div", {},
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: C.text } }, "Load Board"),
+                React.createElement("div", { style: { fontSize: 11, color: C.text3 } }, `${allLoads.length} loads in database`)
+              ),
+              React.createElement("button", {
+                onClick: async () => {
+                  if (!confirm("This will delete all loads and reseed with fresh data. Are you sure?")) return;
+                  const r = await fetch("/api/loads/reseed", { method: "POST", headers: { "x-api-key": getKey() } }).catch(() => null);
+                  if (r?.ok) { const d = await r.json(); alert(`Reseeded ${d.loads_seeded} loads with current dates.`); load(); }
+                  else alert("Reseed failed.");
+                },
+                style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.cyan}25`, background: C.cyanDim, color: C.cyan, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+              }, "Reseed Loads")
+            ),
+            React.createElement(Panel, { title: "" },
+              allLoads.length === 0
+                ? React.createElement("div", { style: { textAlign: "center", padding: "30px 0", color: C.text3, fontSize: 12 } }, "No loads in database. Click Reseed Loads to populate.")
+                : React.createElement("div", { style: { overflowX: "auto", margin: "-20px", padding: 0 } },
+                    React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 11 } },
+                      React.createElement("thead", {},
+                        React.createElement("tr", { style: { borderBottom: `1px solid ${C.border}` } },
+                          ["ID", "Origin", "Destination", "Equipment", "Rate", "Miles", "Weight", "Commodity", "Pieces", "Pickup", "Status"].map(h =>
+                            React.createElement("th", { key: h, style: { padding: "8px 10px", textAlign: "left", color: C.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" } }, h)
+                          )
+                        )
+                      ),
+                      React.createElement("tbody", {},
+                        allLoads.map((ld, i) => React.createElement("tr", {
+                          key: ld.load_id || i,
+                          style: { borderBottom: `1px solid ${C.border}` }
+                        },
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.cyan, fontWeight: 500 } }, ld.load_id),
+                          React.createElement("td", { style: { padding: "7px 10px", color: C.text } }, ld.origin),
+                          React.createElement("td", { style: { padding: "7px 10px", color: C.text } }, ld.destination),
+                          React.createElement("td", { style: { padding: "7px 10px", color: C.text2 } }, ld.equipment_type),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.green } }, ld.loadboard_rate ? `$${Math.round(parseFloat(ld.loadboard_rate)).toLocaleString()}` : "-"),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.text2 } }, ld.miles ? `${Math.round(parseFloat(ld.miles))}` : "-"),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.text2 } }, ld.weight ? `${Math.round(parseFloat(ld.weight)).toLocaleString()}` : "-"),
+                          React.createElement("td", { style: { padding: "7px 10px", color: C.text2 } }, ld.commodity_type || "-"),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.text2, textAlign: "center" } }, ld.num_of_pieces || "-"),
+                          React.createElement("td", { className: "mono", style: { padding: "7px 10px", color: C.text2, fontSize: 10 } }, ld.pickup_datetime ? new Date(ld.pickup_datetime).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "-"),
+                          React.createElement("td", { style: { padding: "7px 10px" } }, React.createElement(Badge, { label: ld.is_available ? "Available" : "Booked", color: ld.is_available ? C.green : C.amber }))
+                        ))
+                      )
+                    )
                   )
             )
           ),
