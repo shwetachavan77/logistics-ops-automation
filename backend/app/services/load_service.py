@@ -18,25 +18,37 @@ async def search_loads(request: LoadSearchRequest, allow_broad: bool = False) ->
         param_idx = 1
 
         # Words that mean "no preference"
-        skip_words = {"anywhere", "any", "anywher", "doesn't matter", "dont care", "don't care", "no preference", "open", "flexible"}
+        skip_words = {"anywhere", "any", "anywher", "anything", "any location", "any city",
+                      "any state", "any where", "all", "everywhere", "whatever", "wherever",
+                      "doesn't matter", "doesnt matter", "dont care", "don't care",
+                      "no preference", "open", "flexible", "not sure", "idk", "i don't know",
+                      "none", "n/a", "na", "null", "undefined", ""}
+
+        def is_vague(val):
+            v = val.lower().strip()
+            if v in skip_words:
+                return True
+            if any(w in v for w in ["any", "anywhere", "don't care", "doesnt matter", "no preference", "whatever", "wherever"]):
+                return True
+            return False
 
         if request.origin:
             origin_clean = request.origin.lower().strip()
-            if origin_clean not in skip_words:
+            if not is_vague(origin_clean):
                 conditions.append(f"LOWER(origin) LIKE ${param_idx}")
                 params.append(f"%{origin_clean}%")
                 param_idx += 1
 
         if request.destination:
             dest_clean = request.destination.lower().strip()
-            if dest_clean not in skip_words:
+            if not is_vague(dest_clean):
                 conditions.append(f"LOWER(destination) LIKE ${param_idx}")
                 params.append(f"%{dest_clean}%")
                 param_idx += 1
 
         if request.equipment_type:
             equip_clean = request.equipment_type.lower().strip()
-            if equip_clean not in skip_words and equip_clean != "any":
+            if not is_vague(equip_clean):
                 conditions.append(f"LOWER(equipment_type) LIKE ${param_idx}")
                 params.append(f"%{equip_clean}%")
                 param_idx += 1
