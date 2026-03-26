@@ -143,10 +143,22 @@
     // Call detail drawer
     function CallDrawer({ call, onClose }) {
       if (!call) return null;
+      const [negRounds, setNegRounds] = useState([]);
+      
+      useEffect(() => {
+        if (call && call.call_id) {
+          const key = sessionStorage.getItem("dash_key") || "";
+          fetch(`/api/calls/${encodeURIComponent(call.call_id)}/negotiations`, { headers: { "x-api-key": key } })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d && d.rounds) setNegRounds(d.rounds); else setNegRounds([]); })
+            .catch(() => setNegRounds([]));
+        }
+      }, [call]);
+
       const time = new Date(call.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       const dur = call.call_duration_seconds ? `${Math.floor(call.call_duration_seconds / 60)}:${String(call.call_duration_seconds % 60).padStart(2, "0")}` : "N/A";
-      const savings = call.agreed_rate && call.loadboard_rate ? ((1 - call.agreed_rate / call.loadboard_rate) * 100).toFixed(1) : null;
-      const delta = call.agreed_rate && call.loadboard_rate ? Math.round(call.agreed_rate - call.loadboard_rate) : null;
+      const savings = call.agreed_rate && call.real_loadboard_rate ? ((1 - call.agreed_rate / call.real_loadboard_rate) * 100).toFixed(1) : null;
+      const delta = call.agreed_rate && call.real_loadboard_rate ? Math.round(call.agreed_rate - call.real_loadboard_rate) : null;
 
       const row = (label, value, color) => React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` } },
         React.createElement("span", { style: { color: C.text2, fontSize: 12 } }, label),
@@ -155,18 +167,7 @@
 
       const section = (title) => React.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 20, marginBottom: 8 } }, title);
 
-      // Build negotiation round history
-      const rounds = [];
-      if (call.negotiation_rounds > 0 && call.initial_offer) {
-        rounds.push({ round: 1, carrier: call.initial_offer, agent: call.loadboard_rate });
-        if (call.negotiation_rounds >= 2) {
-          const mid = call.final_offer && call.initial_offer ? Math.round((call.initial_offer + call.final_offer) / 2) : null;
-          rounds.push({ round: 2, carrier: mid, agent: call.loadboard_rate ? Math.round(call.loadboard_rate * 1.05) : null });
-        }
-        if (call.negotiation_rounds >= 3) {
-          rounds.push({ round: 3, carrier: call.final_offer, agent: call.loadboard_rate ? Math.round(call.loadboard_rate * 1.10) : null });
-        }
-      }
+      const rounds = negRounds;
 
       // Sentiment reasoning
       const sentimentReasons = {
@@ -207,24 +208,37 @@
 
           // Load Details
           call.load_id && React.createElement(React.Fragment, {},
-            section("Load Details"),
-            row("Loadboard Rate", call.loadboard_rate ? `$${Math.round(call.loadboard_rate).toLocaleString()}` : "N/A"),
-            row("Rate/Mile", call.loadboard_rate ? `$${(call.loadboard_rate / 920).toFixed(2)}` : "N/A", C.text2)
+            section("Shipment Details"),
+            row("Load ID", call.load_id),
+            row("Route", call.load_origin && call.load_destination ? `${call.load_origin} to ${call.load_destination}` : "N/A"),
+            row("Equipment", call.load_equipment || "N/A"),
+            row("Miles", call.load_miles ? `${Math.round(call.load_miles).toLocaleString()} mi` : "N/A"),
+            row("Weight", call.load_weight ? `${Math.round(call.load_weight).toLocaleString()} lbs` : "N/A"),
+            row("Commodity", call.load_commodity || "N/A"),
+            row("Pieces", call.load_pieces || "N/A"),
+            row("Dimensions", call.load_dimensions || "N/A"),
+            row("Pickup", call.load_pickup ? new Date(call.load_pickup).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "N/A"),
+            row("Delivery", call.load_delivery ? new Date(call.load_delivery).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "N/A"),
+            row("Loadboard Rate", call.real_loadboard_rate ? `$${Math.round(call.real_loadboard_rate).toLocaleString()}` : "N/A"),
+            row("Rate/Mile", call.real_loadboard_rate && call.load_miles ? `$${(call.real_loadboard_rate / call.load_miles).toFixed(2)}/mi` : "N/A", C.text2),
+            call.load_notes && row("Load Notes", call.load_notes)
           ),
 
           // Negotiation History
-          (call.negotiation_rounds > 0) && React.createElement(React.Fragment, {},
+          (rounds.length > 0) && React.createElement(React.Fragment, {},
             section("Negotiation History"),
             React.createElement("div", { style: { borderRadius: 6, overflow: "hidden", border: `1px solid ${C.border}`, marginBottom: 8 } },
-              React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: C.surface2 } },
+              React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", background: C.surface2 } },
                 React.createElement("div", { style: { padding: "6px 10px", fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase" } }, "Round"),
                 React.createElement("div", { style: { padding: "6px 10px", fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase" } }, "Carrier Offer"),
-                React.createElement("div", { style: { padding: "6px 10px", fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase" } }, "Our Counter")
+                React.createElement("div", { style: { padding: "6px 10px", fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase" } }, "Our Counter"),
+                React.createElement("div", { style: { padding: "6px 10px", fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase" } }, "Result")
               ),
-              ...rounds.map((r, i) => React.createElement("div", { key: i, style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: `1px solid ${C.border}` } },
-                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.text } }, `Round ${r.round}`),
-                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.amber } }, r.carrier ? `$${Math.round(r.carrier).toLocaleString()}` : "-"),
-                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.cyan } }, r.agent ? `$${Math.round(r.agent).toLocaleString()}` : "-")
+              ...rounds.map((r, i) => React.createElement("div", { key: i, style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", borderTop: `1px solid ${C.border}` } },
+                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.text } }, `Round ${r.round_number}`),
+                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.amber } }, r.carrier_offer ? `$${Math.round(r.carrier_offer).toLocaleString()}` : "-"),
+                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.cyan } }, r.our_counter ? `$${Math.round(r.our_counter).toLocaleString()}` : "-"),
+                React.createElement("div", { style: { padding: "8px 10px", fontSize: 11 } }, React.createElement(Badge, { label: r.accepted ? "Accepted" : "Countered", color: r.accepted ? C.green : C.amber }))
               ))
             )
           ),
@@ -260,6 +274,15 @@
           call.transcript && React.createElement(React.Fragment, {},
             section("Transcript"),
             React.createElement("div", { style: { fontSize: 11, color: C.text2, lineHeight: 1.6, padding: "10px 12px", background: C.surface2, borderRadius: 6, maxHeight: 300, overflowY: "auto", whiteSpace: "pre-wrap", fontFamily: "'DM Sans', sans-serif" } }, call.transcript)
+          ),
+
+          // SMS Confirmation
+          call.sms_text && React.createElement(React.Fragment, {},
+            section("SMS Sent"),
+            React.createElement("div", { style: { fontSize: 12, color: C.text2, lineHeight: 1.5, padding: "8px 10px", background: C.surface2, borderRadius: 6, display: "flex", gap: 8, alignItems: "flex-start" } },
+              React.createElement("span", { style: { fontSize: 14, flexShrink: 0 } }, "\uD83D\uDCF1"),
+              React.createElement("span", {}, call.sms_text)
+            )
           )
         )
       );

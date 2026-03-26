@@ -296,6 +296,21 @@ async def health():
     return {"status": "healthy", "service": "carrier-sales-api"}
 
 
+@router.get("/calls/{call_id}/negotiations")
+@limiter.limit("60/minute")
+async def get_negotiation_history(request: Request, call_id: str):
+    """Get round-by-round negotiation history for a call."""
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        rows = await conn.fetch("""
+            SELECT round_number, carrier_offer, our_counter, accepted, created_at
+            FROM negotiations
+            WHERE call_id = $1
+            ORDER BY round_number ASC
+        """, call_id)
+    return {"call_id": call_id, "rounds": [dict(r) for r in rows]}
+
+
 @router.post("/auth/login")
 async def dashboard_login(request: Request):
     """Validate dashboard credentials. Returns API key on success."""
