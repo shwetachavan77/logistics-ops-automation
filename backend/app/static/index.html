@@ -634,8 +634,7 @@
                 React.createElement("div", { style: { fontSize: 32, marginBottom: 8 } }, "📞"),
                 React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: C.text2, marginBottom: 4 } }, "No calls yet"),
                 React.createElement("div", { style: { fontSize: 12, color: C.text3 } }, "Make a test call from HappyRobot and it'll show up here. Hit Refresh after the call ends.")
-              ) :
-              React.createElement("div", { style: { overflowX: "auto", margin: "-20px", padding: "0" } },
+              ) : React.createElement("div", { style: { overflowX: "auto", margin: "-20px", padding: "0" } },
                 React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
                   React.createElement("thead", {},
                     React.createElement("tr", { style: { borderBottom: `1px solid ${C.border}` } },
@@ -701,12 +700,12 @@
               )
             ),
             React.createElement(Panel, { title: "Top Lanes", subtitle: "Most popular origin-destination pairs by carrier interest" },
-              (m.top_lanes || []).length === 0 ? React.createElement("div", { style: { textAlign: "center", padding: "40px 0" } },
+              ...((m.top_lanes || []).length === 0 ? [React.createElement("div", { key: "empty", style: { textAlign: "center", padding: "40px 0" } },
                 React.createElement("div", { style: { fontSize: 32, marginBottom: 8 } }, "🗺️"),
                 React.createElement("div", { style: { fontSize: 14, fontWeight: 600, color: C.text2, marginBottom: 4 } }, "No lane data yet"),
                 React.createElement("div", { style: { fontSize: 12, color: C.text3 } }, "Lane analytics will appear after carriers start booking loads.")
-              ) :
-              ...(m.top_lanes || []).map((l, i) => {
+              )] :
+              (m.top_lanes || []).map((l, i) => {
                 const cv = l.calls > 0 ? Math.round((l.bookings / l.calls) * 100) : 0;
                 const maxC = Math.max(...m.top_lanes.map(x => x.calls));
                 return React.createElement("div", { key: i, style: { display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 3fr", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < m.top_lanes.length - 1 ? `1px solid ${C.border}` : "none" } },
@@ -732,6 +731,7 @@
                   )
                 );
               })
+              )
             )
           ),
 
