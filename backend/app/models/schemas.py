@@ -1,6 +1,6 @@
 """Pydantic schemas for loads, calls, negotiations, alerts, and API payloads."""
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 from typing import Optional, List, Union
 from datetime import datetime
 from enum import Enum
@@ -12,6 +12,7 @@ class CallOutcome(str, Enum):
     NO_MATCH = "no_match"
     VERIFICATION_FAILED = "verification_failed"
     NEGOTIATION_FAILED = "negotiation_failed"
+    GENERAL_INQUIRY = "general_inquiry"
     UNKNOWN = "unknown"
 
 
@@ -118,67 +119,21 @@ class NegotiationResponse(BaseModel):
 
 class CallLog(BaseModel):
     call_id: str
-    carrier_mc: Optional[str] = None
+    carrier_mc: Optional[Union[str, int, float]] = None
     carrier_name: Optional[str] = None
     load_id: Optional[str] = None
-    outcome: str = "unknown"
-    sentiment: str = "neutral"
-    agreed_rate: Optional[float] = None
-    negotiation_rounds: int = 0
-    initial_offer: Optional[float] = None
-    final_offer: Optional[float] = None
-    loadboard_rate: Optional[float] = None
+    outcome: Optional[str] = "unknown"
+    sentiment: Optional[str] = "neutral"
+    agreed_rate: Optional[Union[str, int, float]] = None
+    negotiation_rounds: Optional[Union[str, int]] = 0
+    initial_offer: Optional[Union[str, int, float]] = None
+    final_offer: Optional[Union[str, int, float]] = None
+    loadboard_rate: Optional[Union[str, int, float]] = None
     call_duration_seconds: Optional[int] = None
     transcript: Optional[str] = None
     notes: Optional[str] = None
+    sms_text: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-    @model_validator(mode="before")
-    @classmethod
-    def clean_inputs(cls, data):
-        if isinstance(data, dict):
-            # Convert carrier_mc to string
-            if "carrier_mc" in data and data["carrier_mc"] is not None:
-                data["carrier_mc"] = str(data["carrier_mc"])
-            # Default outcome if missing
-            if "outcome" not in data or not data.get("outcome"):
-                data["outcome"] = "unknown"
-            # Clean sentiment - may come as boolean from real-time classifier
-            sent = data.get("sentiment")
-            if isinstance(sent, bool):
-                data["sentiment"] = "positive" if sent else "negative"
-            elif sent is None or (isinstance(sent, str) and sent.strip().lower() in ("", "null", "none")):
-                data["sentiment"] = "neutral"
-            # Handle extra fields from HappyRobot that aren't in our schema
-            for extra in ["agent_final_offer", "carrier_final_offer"]:
-                val = data.pop(extra, None)
-                if extra == "agent_final_offer" and val and val != "":
-                    data.setdefault("final_offer", val)
-                elif extra == "carrier_final_offer" and val and val != "":
-                    data.setdefault("initial_offer", val)
-            # Clean empty strings to None for numeric fields
-            for f in ["agreed_rate", "initial_offer", "final_offer", "loadboard_rate"]:
-                v = data.get(f)
-                if v is not None and isinstance(v, str):
-                    v = v.strip().replace("$", "").replace(",", "")
-                    if v.lower() in ("", "null", "none"):
-                        data[f] = None
-                    else:
-                        try:
-                            data[f] = float(v)
-                        except ValueError:
-                            data[f] = None
-            # Clean negotiation_rounds
-            nr = data.get("negotiation_rounds")
-            if nr is not None:
-                if isinstance(nr, str):
-                    try:
-                        data["negotiation_rounds"] = int(float(nr))
-                    except (ValueError, TypeError):
-                        data["negotiation_rounds"] = 0
-                elif isinstance(nr, float):
-                    data["negotiation_rounds"] = int(nr)
-        return data
 
 
 class CallLogResponse(BaseModel):
@@ -245,14 +200,3 @@ class DashboardMetrics(BaseModel):
     revenue_booked: float
     calls_over_time: List[dict]
     top_lanes: List[dict]
-    # Negotiation intelligence
-    round1_close_rate: float = 0
-    floor_rate_hit_rate: float = 0
-    avg_rate_given_up: float = 0
-    avg_call_duration: float = 0
-    repeat_carrier_rate: float = 0
-    load_fill_rate: float = 0
-    loads_available: int = 0
-    loads_booked: int = 0
-    avg_rate_per_mile: str = "0.00"
-    rounds_breakdown: dict = {}

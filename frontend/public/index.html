@@ -306,37 +306,45 @@
 
       useEffect(() => { load(); }, [load]);
 
-      const [authed, setAuthed] = useState(() => sessionStorage.getItem("dash_auth") === "1" || new URLSearchParams(window.location.search).get("key") === "carrier-sales-dev-key-2026");
+      const [authed, setAuthed] = useState(() => sessionStorage.getItem("dash_auth") === "1");
       const [pw, setPw] = useState("");
+      const [authLoading, setAuthLoading] = useState(false);
+      const [authError, setAuthError] = useState("");
+
+      // Auto-auth from URL key param
+      useEffect(() => {
+        const urlKey = new URLSearchParams(window.location.search).get("key");
+        if (urlKey && !authed) {
+          fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: urlKey }) })
+            .then(r => { if (r.ok) { sessionStorage.setItem("dash_auth", "1"); setAuthed(true); } })
+            .catch(() => {});
+        }
+      }, []);
+
+      const handleLogin = async () => {
+        setAuthLoading(true); setAuthError("");
+        try {
+          const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
+          if (r.ok) { sessionStorage.setItem("dash_auth", "1"); setAuthed(true); }
+          else { setAuthError("Invalid access key"); }
+        } catch { setAuthError("Cannot reach server"); }
+        setAuthLoading(false);
+      };
+
+      const getKey = () => new URLSearchParams(window.location.search).get("key") || sessionStorage.getItem("dash_key") || "";
 
       if (!authed) return React.createElement("div", { style: { background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" } },
         React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 32, width: 340, textAlign: "center" } },
           React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4 } }, "Carrier Sales Dashboard"),
           React.createElement("div", { style: { fontSize: 12, color: C.text3, marginBottom: 20 } }, "Enter access key to continue"),
-          React.createElement("input", { type: "password", value: pw, onChange: e => setPw(e.target.value), onKeyDown: e => { if (e.key === "Enter") { if (pw === "carrier-sales-dev-key-2026") { sessionStorage.setItem("dash_auth", "1"); setAuthed(true); } else alert("Invalid key"); } },
+          React.createElement("input", { type: "password", value: pw, onChange: e => setPw(e.target.value), onKeyDown: e => { if (e.key === "Enter") handleLogin(); },
             placeholder: "Access key",
             style: { width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface2, color: C.text, fontSize: 13, marginBottom: 12, boxSizing: "border-box" }
           }),
-          React.createElement("button", { onClick: () => { if (pw === "carrier-sales-dev-key-2026") { sessionStorage.setItem("dash_auth", "1"); setAuthed(true); } else alert("Invalid key"); },
-            style: { width: "100%", padding: "10px", borderRadius: 8, border: "none", background: C.cyan, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }
-          }, "Sign In")
-        )
-      );
-
-      const [authed, setAuthed] = useState(() => sessionStorage.getItem("dash_auth") === "1" || new URLSearchParams(window.location.search).get("key") === "carrier-sales-dev-key-2026");
-      const [pw, setPw] = useState("");
-
-      if (!authed) return React.createElement("div", { style: { background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" } },
-        React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 32, width: 320, textAlign: "center" } },
-          React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4 } }, "Carrier Sales Dashboard"),
-          React.createElement("div", { style: { fontSize: 12, color: C.text3, marginBottom: 20 } }, "Enter access key to continue"),
-          React.createElement("input", { type: "password", value: pw, onChange: e => setPw(e.target.value), onKeyDown: e => { if (e.key === "Enter") { if (pw === "carrier-sales-dev-key-2026") { sessionStorage.setItem("dash_auth", "1"); setAuthed(true); } else alert("Invalid key"); } },
-            placeholder: "Access key",
-            style: { width: "100%", padding: "10px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text, fontSize: 13, marginBottom: 12, boxSizing: "border-box" }
-          }),
-          React.createElement("button", { onClick: () => { if (pw === "carrier-sales-dev-key-2026") { sessionStorage.setItem("dash_auth", "1"); setAuthed(true); } else alert("Invalid key"); },
-            style: { width: "100%", padding: "10px", borderRadius: 6, border: "none", background: C.cyan, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }
-          }, "Sign In")
+          authError && React.createElement("div", { style: { color: C.red, fontSize: 11, marginBottom: 8 } }, authError),
+          React.createElement("button", { onClick: handleLogin, disabled: authLoading,
+            style: { width: "100%", padding: "10px", borderRadius: 8, border: "none", background: C.cyan, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: authLoading ? 0.6 : 1 }
+          }, authLoading ? "Checking..." : "Sign In")
         )
       );
 
@@ -419,7 +427,7 @@
             React.createElement("button", {
               onClick: async () => {
                 try {
-                  const r = await fetch("/api/loads/refresh", { method: "POST", headers: { "x-api-key": new URLSearchParams(window.location.search).get("key") || "carrier-sales-dev-key-2026" } });
+                  const r = await fetch("/api/loads/refresh", { method: "POST", headers: { "x-api-key": getKey() } });
                   const d = await r.json();
                   if (d.status === "ok") { alert(`Added ${d.added} new loads. Total unbooked: ${d.unbooked}`); load(); }
                   else alert(d.message || "Could not add loads");
@@ -430,7 +438,7 @@
             React.createElement("button", {
               onClick: async () => {
                 if (!confirm("This will clear ALL call history and reset all loads to available. Are you sure?")) return;
-                const r = await fetch("/api/reset", { method: "POST", headers: { "x-api-key": new URLSearchParams(window.location.search).get("key") || "carrier-sales-dev-key-2026" } }).catch(() => null);
+                const r = await fetch("/api/reset", { method: "POST", headers: { "x-api-key": getKey() } }).catch(() => null);
                 if (r?.ok) { const d = await r.json(); alert(`Done! ${d.calls_deleted} calls cleared. ${d.loads_reset} loads reset to available.`); load(); }
                 else alert("Reset failed.");
               },

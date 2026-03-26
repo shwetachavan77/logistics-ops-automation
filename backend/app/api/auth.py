@@ -5,6 +5,7 @@ from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
 API_KEY = os.getenv("API_KEY", "carrier-sales-dev-key-2026")
+DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "0happyrobot")
 
 
 class APIKeyMiddleware(BaseHTTPMiddleware):
@@ -15,6 +16,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         "/openapi.json",
         "/redoc",
         "/api/health",
+        "/api/auth/login",
     }
 
     # GET endpoints the dashboard needs without auth
