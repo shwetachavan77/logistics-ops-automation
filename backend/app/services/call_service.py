@@ -17,20 +17,24 @@ async def log_call(call: CallLog) -> CallLogResponse:
                 call_id, carrier_mc, carrier_name, load_id, outcome,
                 sentiment, agreed_rate, negotiation_rounds, initial_offer,
                 final_offer, loadboard_rate, call_duration_seconds,
-                transcript, timestamp
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+                transcript, notes, sms_text, timestamp
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
             ON CONFLICT (call_id) DO UPDATE SET
                 outcome = EXCLUDED.outcome,
                 sentiment = EXCLUDED.sentiment,
                 agreed_rate = EXCLUDED.agreed_rate,
                 negotiation_rounds = EXCLUDED.negotiation_rounds,
-                transcript = EXCLUDED.transcript
+                transcript = EXCLUDED.transcript,
+                notes = EXCLUDED.notes,
+                sms_text = EXCLUDED.sms_text
         """,
             call.call_id, call.carrier_mc, call.carrier_name,
             call.load_id, str(call.outcome), str(call.sentiment),
             call.agreed_rate, call.negotiation_rounds,
             call.initial_offer, call.final_offer, call.loadboard_rate,
-            call.call_duration_seconds, call.transcript, call.timestamp
+            call.call_duration_seconds,
+            call.transcript if isinstance(call.transcript, str) else None,
+            call.notes, call.sms_text, call.timestamp
         )
 
         # If the load was booked, mark it unavailable
@@ -141,11 +145,25 @@ async def get_dashboard_metrics() -> DashboardMetrics:
 
 
 async def get_recent_calls(limit: int = 20) -> List[dict]:
-    """Get recent call records for the dashboard table."""
+    """Get recent call records with load details for the dashboard."""
     async with Database.pool.acquire() as conn:
         rows = await conn.fetch("""
-            SELECT * FROM calls
-            ORDER BY timestamp DESC
+            SELECT c.*,
+                l.origin AS load_origin,
+                l.destination AS load_destination,
+                l.equipment_type AS load_equipment,
+                l.weight AS load_weight,
+                l.commodity_type AS load_commodity,
+                l.num_of_pieces AS load_pieces,
+                l.miles AS load_miles,
+                l.dimensions AS load_dimensions,
+                l.notes AS load_notes,
+                l.pickup_datetime AS load_pickup,
+                l.delivery_datetime AS load_delivery,
+                l.loadboard_rate AS real_loadboard_rate
+            FROM calls c
+            LEFT JOIN loads l ON c.load_id = l.load_id
+            ORDER BY c.timestamp DESC
             LIMIT $1
         """, limit)
         return [dict(row) for row in rows]
