@@ -155,6 +155,27 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             "SELECT COALESCE(AVG(call_duration_seconds), 0) FROM calls WHERE call_duration_seconds > 0"
         )
 
+        total_carriers = await conn.fetchval(
+            "SELECT COUNT(DISTINCT carrier_mc) FROM calls WHERE carrier_mc IS NOT NULL"
+        )
+        repeat_carriers = await conn.fetchval(
+            "SELECT COUNT(*) FROM (SELECT carrier_mc FROM calls WHERE carrier_mc IS NOT NULL GROUP BY carrier_mc HAVING COUNT(*) > 1) sub"
+        )
+        repeat_carrier_rate = (repeat_carriers / total_carriers * 100) if total_carriers > 0 else 0
+
+        loads_available = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
+        loads_booked = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = FALSE")
+        total_loads = loads_available + loads_booked
+        load_fill_rate = (loads_booked / total_loads * 100) if total_loads > 0 else 0
+
+        avg_rpm = await conn.fetchval("""
+            SELECT COALESCE(AVG(
+                CASE WHEN l.miles > 0 THEN c.agreed_rate / l.miles ELSE NULL END
+            ), 0)
+            FROM calls c JOIN loads l ON c.load_id = l.load_id
+            WHERE c.outcome = 'booked' AND c.agreed_rate IS NOT NULL
+        """)
+
         return DashboardMetrics(
             total_calls=total,
             calls_by_outcome=calls_by_outcome,
@@ -169,6 +190,11 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             floor_rate_hit_rate=round(floor_rate_hit_rate, 1),
             avg_rate_given_up=round(float(avg_rate_given_up)),
             avg_call_duration=round(float(avg_duration)),
+            repeat_carrier_rate=round(repeat_carrier_rate, 1),
+            load_fill_rate=round(load_fill_rate, 1),
+            loads_available=loads_available,
+            loads_booked=loads_booked,
+            avg_rate_per_mile=f"{float(avg_rpm):.2f}",
         )
 
 

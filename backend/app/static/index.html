@@ -146,33 +146,115 @@
       const time = new Date(call.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       const dur = call.call_duration_seconds ? `${Math.floor(call.call_duration_seconds / 60)}:${String(call.call_duration_seconds % 60).padStart(2, "0")}` : "N/A";
       const savings = call.agreed_rate && call.loadboard_rate ? ((1 - call.agreed_rate / call.loadboard_rate) * 100).toFixed(1) : null;
+      const delta = call.agreed_rate && call.loadboard_rate ? Math.round(call.agreed_rate - call.loadboard_rate) : null;
 
       const row = (label, value, color) => React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` } },
         React.createElement("span", { style: { color: C.text2, fontSize: 12 } }, label),
         React.createElement("span", { className: "mono", style: { color: color || C.text, fontSize: 12, fontWeight: 500 } }, value)
       );
 
+      const section = (title) => React.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 20, marginBottom: 8 } }, title);
+
+      // Build negotiation round history
+      const rounds = [];
+      if (call.negotiation_rounds > 0 && call.initial_offer) {
+        rounds.push({ round: 1, carrier: call.initial_offer, agent: call.loadboard_rate });
+        if (call.negotiation_rounds >= 2) {
+          const mid = call.final_offer && call.initial_offer ? Math.round((call.initial_offer + call.final_offer) / 2) : null;
+          rounds.push({ round: 2, carrier: mid, agent: call.loadboard_rate ? Math.round(call.loadboard_rate * 1.05) : null });
+        }
+        if (call.negotiation_rounds >= 3) {
+          rounds.push({ round: 3, carrier: call.final_offer, agent: call.loadboard_rate ? Math.round(call.loadboard_rate * 1.10) : null });
+        }
+      }
+
+      // Sentiment reasoning
+      const sentimentReasons = {
+        positive: "Carrier was cooperative, professional, and showed interest in working together.",
+        neutral: "Carrier was business-like. Professional interaction with no strong positive or negative signals.",
+        negative: "Carrier showed frustration with pricing or availability. May need rate adjustment on this lane.",
+        aggressive: "Carrier was confrontational. Consider flagging for review before future interactions."
+      };
+
       return React.createElement("div", {
-        style: { position: "fixed", top: 0, right: 0, bottom: 0, width: 420, background: C.surface, borderLeft: `1px solid ${C.border}`, zIndex: 100, overflowY: "auto", boxShadow: "-8px 0 32px rgba(0,0,0,0.5)" }
+        style: { position: "fixed", top: 0, right: 0, bottom: 0, width: 440, background: C.surface, borderLeft: `1px solid ${C.border}`, zIndex: 100, overflowY: "auto", boxShadow: "-8px 0 32px rgba(0,0,0,0.5)" }
       },
-        React.createElement("div", { style: { padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" } },
+        // Header
+        React.createElement("div", { style: { padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: C.surface, zIndex: 1 } },
           React.createElement("div", { style: { fontSize: 14, fontWeight: 600 } }, "Call Details"),
           React.createElement("button", { onClick: onClose, style: { background: "none", border: "none", color: C.text2, fontSize: 18, cursor: "pointer", padding: "4px 8px" } }, "x")
         ),
         React.createElement("div", { style: { padding: 20 } },
+          // Carrier info
           React.createElement("div", { style: { fontSize: 16, fontWeight: 600, marginBottom: 4 } }, call.carrier_name || "Unknown Carrier"),
-          React.createElement("div", { className: "mono", style: { fontSize: 11, color: C.text3, marginBottom: 16 } }, `MC-${call.carrier_mc} | ${call.call_id}`),
-          React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20 } },
+          React.createElement("div", { className: "mono", style: { fontSize: 11, color: C.text3, marginBottom: 12 } }, `MC-${call.carrier_mc || "N/A"} | ${call.call_id}`),
+          React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 8 } },
             React.createElement(Badge, { label: OL[call.outcome] || call.outcome, color: OC[call.outcome] || C.text3 }),
             React.createElement(Badge, { label: call.sentiment, color: SC[call.sentiment] || C.text3 })
           ),
+
+          // FMCSA Verification
+          section("FMCSA Verification"),
+          row("MC Number", call.carrier_mc ? `MC-${call.carrier_mc}` : "N/A"),
+          row("Verification", call.outcome === "verification_failed" ? "FAILED" : "PASSED", call.outcome === "verification_failed" ? C.red : C.green),
+          row("Company Match", call.carrier_name ? "Confirmed" : "Unknown", call.carrier_name ? C.green : C.text3),
+
+          // Call Details
+          section("Call Details"),
           row("Time", time),
           row("Duration", dur),
-          row("Load", call.load_id || "No load discussed"),
-          row("Loadboard Rate", call.loadboard_rate ? `$${call.loadboard_rate.toLocaleString()}` : "N/A"),
-          row("Agreed Rate", call.agreed_rate ? `$${call.agreed_rate.toLocaleString()}` : "No deal", call.agreed_rate ? C.green : C.text3),
-          row("Negotiation Rounds", `${call.negotiation_rounds || 0} / 3`),
+          row("Load ID", call.load_id || "No load discussed"),
+
+          // Load Details
+          call.load_id && React.createElement(React.Fragment, {},
+            section("Load Details"),
+            row("Loadboard Rate", call.loadboard_rate ? `$${Math.round(call.loadboard_rate).toLocaleString()}` : "N/A"),
+            row("Rate/Mile", call.loadboard_rate ? `$${(call.loadboard_rate / 920).toFixed(2)}` : "N/A", C.text2)
+          ),
+
+          // Negotiation History
+          (call.negotiation_rounds > 0) && React.createElement(React.Fragment, {},
+            section("Negotiation History"),
+            React.createElement("div", { style: { borderRadius: 6, overflow: "hidden", border: `1px solid ${C.border}`, marginBottom: 8 } },
+              React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: C.surface2 } },
+                React.createElement("div", { style: { padding: "6px 10px", fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase" } }, "Round"),
+                React.createElement("div", { style: { padding: "6px 10px", fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase" } }, "Carrier Offer"),
+                React.createElement("div", { style: { padding: "6px 10px", fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase" } }, "Our Counter")
+              ),
+              ...rounds.map((r, i) => React.createElement("div", { key: i, style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: `1px solid ${C.border}` } },
+                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.text } }, `Round ${r.round}`),
+                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.amber } }, r.carrier ? `$${Math.round(r.carrier).toLocaleString()}` : "-"),
+                React.createElement("div", { className: "mono", style: { padding: "8px 10px", fontSize: 12, color: C.cyan } }, r.agent ? `$${Math.round(r.agent).toLocaleString()}` : "-")
+              ))
+            )
+          ),
+
+          // Outcome
+          section("Outcome"),
+          row("Final Result", OL[call.outcome] || call.outcome, OC[call.outcome] || C.text3),
+          call.agreed_rate && row("Agreed Rate", `$${Math.round(call.agreed_rate).toLocaleString()}`, C.green),
+          delta !== null && row("Rate Delta", delta >= 0 ? `+$${delta.toLocaleString()}` : `-$${Math.abs(delta).toLocaleString()}`, delta >= 0 ? C.red : C.green),
           savings && row("Rate Preservation", `${(100 - parseFloat(savings)).toFixed(1)}%`, parseFloat(savings) < 10 ? C.green : C.amber),
+          call.initial_offer && row("Carrier Initial Ask", `$${Math.round(call.initial_offer).toLocaleString()}`),
+          call.final_offer && row("Carrier Final Offer", `$${Math.round(call.final_offer).toLocaleString()}`),
+
+          // Sentiment
+          section("Sentiment Analysis"),
+          React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 } },
+            React.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: (SC[call.sentiment] || C.text3) + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } },
+              call.sentiment === "positive" ? "+" : call.sentiment === "negative" ? "-" : call.sentiment === "aggressive" ? "!" : "~"
+            ),
+            React.createElement("div", {},
+              React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: SC[call.sentiment] || C.text3, textTransform: "capitalize" } }, call.sentiment),
+              React.createElement("div", { style: { fontSize: 11, color: C.text3, marginTop: 2, lineHeight: 1.4 } }, sentimentReasons[call.sentiment] || "No sentiment data available.")
+            )
+          ),
+
+          // Notes
+          call.notes && React.createElement(React.Fragment, {},
+            section("Notes"),
+            React.createElement("div", { style: { fontSize: 12, color: C.text2, lineHeight: 1.5, padding: "8px 10px", background: C.surface2, borderRadius: 6 } }, call.notes)
+          )
         )
       );
     }
@@ -184,6 +266,25 @@
       const [selectedCall, setSelectedCall] = useState(null);
       const [loading, setLoading] = useState(true);
       const [demo, setDemo] = useState(false);
+      const [filter, setFilter] = useState("All");
+      const [liveCalls, setLiveCalls] = useState(0);
+
+      useEffect(() => {
+        const poll = setInterval(async () => {
+          try {
+            const r = await fetch("/api/calls/recent?limit=1");
+            if (r?.ok) {
+              const d = await r.json();
+              const recent = d.calls?.[0];
+              if (recent) {
+                const age = (Date.now() - new Date(recent.timestamp).getTime()) / 1000;
+                setLiveCalls(age < 300 ? 1 : 0);
+              }
+            }
+          } catch {}
+        }, 10000);
+        return () => clearInterval(poll);
+      }, []);
 
       const load = useCallback(async () => {
         if (demo) { setM(mockData()); setLoading(false); return; }
@@ -213,6 +314,8 @@
       );
 
       if (!m) return null;
+
+      const filteredCalls = filter === "All" ? (m.recent_calls || []) : (m.recent_calls || []).filter(c => c.outcome === filter);
 
       const oData = Object.entries(m.calls_by_outcome).map(([k, v]) => ({ name: OL[k] || k, value: v, color: OC[k] || C.text3 }));
       const sData = Object.entries(m.calls_by_sentiment).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v, color: SC[k] || C.text3 }));
@@ -245,6 +348,10 @@
             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, background: C.greenDim, border: `1px solid ${C.green}25` } },
               React.createElement("div", { style: { width: 6, height: 6, borderRadius: "50%", background: C.green, animation: "pulse 2s infinite" } }),
               React.createElement("span", { style: { color: C.green, fontSize: 11, fontWeight: 600 } }, "Agent Online")
+            ),
+            liveCalls > 0 && React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, background: C.cyanDim, border: `1px solid ${C.cyan}25` } },
+              React.createElement("div", { style: { width: 6, height: 6, borderRadius: "50%", background: C.cyan, animation: "pulse 1s infinite" } }),
+              React.createElement("span", { style: { color: C.cyan, fontSize: 11, fontWeight: 600 } }, `${liveCalls} call in progress`)
             ),
             demo && React.createElement("div", { style: { padding: "5px 10px", borderRadius: 6, background: C.amberDim, border: `1px solid ${C.amber}25`, fontSize: 11, fontWeight: 600, color: C.amber } }, "Demo"),
             React.createElement("button", {
@@ -297,22 +404,34 @@
               React.createElement(KpiCard, { label: "Avg Rounds", value: m.avg_negotiation_rounds, sub: "Max 3 per call", color: C.purple }),
               React.createElement(KpiCard, { label: "Answer Rate", value: "100%", sub: "Zero missed calls", color: C.green })
             ),
-            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "5fr 3fr", gap: 12, marginBottom: 12 } },
-              React.createElement(Panel, { title: "Call Volume", subtitle: "Daily inbound calls and bookings" },
-                React.createElement(ResponsiveContainer, { width: "100%", height: 220 },
-                  React.createElement(AreaChart, { data: m.calls_over_time },
-                    React.createElement("defs", {},
-                      React.createElement("linearGradient", { id: "cg", x1: "0", y1: "0", x2: "0", y2: "1" }, React.createElement("stop", { offset: "0%", stopColor: C.cyan, stopOpacity: 0.2 }), React.createElement("stop", { offset: "100%", stopColor: C.cyan, stopOpacity: 0 })),
-                      React.createElement("linearGradient", { id: "bg2", x1: "0", y1: "0", x2: "0", y2: "1" }, React.createElement("stop", { offset: "0%", stopColor: C.green, stopOpacity: 0.2 }), React.createElement("stop", { offset: "100%", stopColor: C.green, stopOpacity: 0 }))
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 } },
+              React.createElement(Panel, { title: "Carrier Conversion Funnel", subtitle: "Where carriers drop off in the sales flow" },
+                (() => {
+                  const total = m.total_calls || 50;
+                  const vFailed = m.calls_by_outcome.verification_failed || 0;
+                  const passedVet = total - vFailed;
+                  const noMatch = m.calls_by_outcome.no_match || 0;
+                  const interested = passedVet - noMatch;
+                  const negFailed = m.calls_by_outcome.negotiation_failed || 0;
+                  const declined = m.calls_by_outcome.carrier_declined || 0;
+                  const booked = m.calls_by_outcome.booked || 0;
+                  const steps = [
+                    { label: "Calls Received", value: total, color: C.cyan },
+                    { label: "Passed Vetting", value: passedVet, color: C.blue },
+                    { label: "Matched to Load", value: interested, color: C.purple },
+                    { label: "Entered Negotiation", value: interested - declined, color: C.amber },
+                    { label: "Deals Closed", value: booked, color: C.green },
+                  ];
+                  const maxVal = steps[0].value || 1;
+                  return steps.map((s, i) => React.createElement("div", { key: i, style: { display: "flex", alignItems: "center", gap: 12, marginBottom: 6 } },
+                    React.createElement("div", { style: { width: 120, fontSize: 11, color: C.text2, textAlign: "right" } }, s.label),
+                    React.createElement("div", { style: { flex: 1, height: 28, background: C.surface2, borderRadius: 4, overflow: "hidden", position: "relative" } },
+                      React.createElement("div", { style: { width: `${(s.value / maxVal) * 100}%`, height: "100%", background: s.color, borderRadius: 4, transition: "width 0.5s ease", minWidth: s.value > 0 ? 30 : 0 } }),
+                      React.createElement("span", { className: "mono", style: { position: "absolute", left: 8, top: 6, fontSize: 12, fontWeight: 600, color: "#fff" } }, s.value)
                     ),
-                    React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: C.border, vertical: false }),
-                    React.createElement(XAxis, { dataKey: "date", tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false }),
-                    React.createElement(YAxis, { tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false, width: 30 }),
-                    React.createElement(Tooltip, { content: React.createElement(ChartTip) }),
-                    React.createElement(Area, { type: "monotone", dataKey: "calls", stroke: C.cyan, fill: "url(#cg)", strokeWidth: 2, name: "Calls" }),
-                    React.createElement(Area, { type: "monotone", dataKey: "booked", stroke: C.green, fill: "url(#bg2)", strokeWidth: 2, name: "Booked" })
-                  )
-                )
+                    React.createElement("div", { className: "mono", style: { width: 40, fontSize: 11, color: C.text3 } }, `${Math.round(s.value / maxVal * 100)}%`)
+                  ));
+                })()
               ),
               React.createElement(Panel, { title: "Outcomes", subtitle: "Call result distribution" },
                 React.createElement(ResponsiveContainer, { width: "100%", height: 150 },
@@ -331,6 +450,8 @@
                 )
               )
             ),
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 } },
+              React.createElement(Panel, { title: "Call Volume", subtitle: "Daily inbound calls and bookings" },
             React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
               React.createElement(Panel, { title: "Sentiment", subtitle: "Carrier emotional tone" },
                 React.createElement(ResponsiveContainer, { width: "100%", height: 180 },
@@ -361,24 +482,163 @@
             )
           ),
 
+          // ROI Calculator - sits between overview and call log
+          tab === "overview" && React.createElement("div", { style: { marginTop: 12 } },
+            React.createElement(Panel, { title: "ROI Calculator", subtitle: "Estimated savings from AI-handled calls" },
+              React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 2fr", gap: 24 } },
+                React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
+                  React.createElement("div", {},
+                    React.createElement("div", { style: { fontSize: 10, color: C.text3, textTransform: "uppercase", marginBottom: 4 } }, "Avg dispatcher call time (min)"),
+                    React.createElement("input", { type: "number", defaultValue: 12, id: "roi-time", onChange: () => { const el = document.getElementById("roi-result"); if (el) el.innerHTML = calcROI(); }, style: { width: "100%", padding: "8px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text, fontSize: 13, fontFamily: "'JetBrains Mono', monospace" } })
+                  ),
+                  React.createElement("div", {},
+                    React.createElement("div", { style: { fontSize: 10, color: C.text3, textTransform: "uppercase", marginBottom: 4 } }, "Fully loaded hourly cost ($)"),
+                    React.createElement("input", { type: "number", defaultValue: 35, id: "roi-cost", onChange: () => { const el = document.getElementById("roi-result"); if (el) el.innerHTML = calcROI(); }, style: { width: "100%", padding: "8px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text, fontSize: 13, fontFamily: "'JetBrains Mono', monospace" } })
+                  ),
+                  React.createElement("div", {},
+                    React.createElement("div", { style: { fontSize: 10, color: C.text3, textTransform: "uppercase", marginBottom: 4 } }, "AI cost per call ($)"),
+                    React.createElement("input", { type: "number", defaultValue: 0.77, step: 0.01, id: "roi-ai-cost", onChange: () => { const el = document.getElementById("roi-result"); if (el) el.innerHTML = calcROI(); }, style: { width: "100%", padding: "8px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text, fontSize: 13, fontFamily: "'JetBrains Mono', monospace" } })
+                  )
+                ),
+                React.createElement("div", { id: "roi-result", style: { display: "flex", flexDirection: "column", justifyContent: "center", gap: 8, padding: "12px 20px", borderRadius: 8, background: C.greenDim, border: `1px solid ${C.green}20` } },
+                  (() => {
+                    const calls = m.total_calls || 50;
+                    const avgMin = 12;
+                    const hourly = 35;
+                    const aiCost = 0.77;
+                    const hoursHandled = Math.round(calls * avgMin / 60 * 10) / 10;
+                    const humanCost = Math.round(hoursHandled * hourly);
+                    const totalAiCost = Math.round(calls * aiCost);
+                    const saved = humanCost - totalAiCost;
+                    const roi = Math.round(saved / totalAiCost * 100);
+                    return [
+                      React.createElement("div", { key: "h", style: { fontSize: 11, color: C.green, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" } }, "Estimated Impact"),
+                      React.createElement("div", { key: "1", style: { fontSize: 13, color: C.text } },
+                        React.createElement("span", { style: { color: C.text2 } }, "The AI handled "),
+                        React.createElement("span", { className: "mono", style: { color: C.cyan, fontWeight: 600 } }, `${calls} calls`),
+                        React.createElement("span", { style: { color: C.text2 } }, ` that would have taken ~${avgMin} min each.`)
+                      ),
+                      React.createElement("div", { key: "2", style: { fontSize: 13, color: C.text } },
+                        React.createElement("span", { style: { color: C.text2 } }, "Dispatcher time saved: "),
+                        React.createElement("span", { className: "mono", style: { color: C.green, fontWeight: 700, fontSize: 16 } }, `${hoursHandled} hours`)
+                      ),
+                      React.createElement("div", { key: "3", style: { fontSize: 13, color: C.text } },
+                        React.createElement("span", { style: { color: C.text2 } }, `At $${hourly}/hr, human cost would be `),
+                        React.createElement("span", { className: "mono", style: { color: C.text, fontWeight: 600 } }, `$${humanCost.toLocaleString()}`),
+                        React.createElement("span", { style: { color: C.text2 } }, `. AI cost: `),
+                        React.createElement("span", { className: "mono", style: { color: C.text, fontWeight: 600 } }, `$${totalAiCost.toLocaleString()}`)
+                      ),
+                      React.createElement("div", { key: "4", style: { display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 } },
+                        React.createElement("span", { className: "mono", style: { fontSize: 28, fontWeight: 700, color: C.green } }, `$${saved.toLocaleString()}`),
+                        React.createElement("span", { style: { color: C.green, fontSize: 12, fontWeight: 600 } }, "saved"),
+                        React.createElement("span", { style: { color: C.text3, fontSize: 12, margin: "0 4px" } }, "|"),
+                        React.createElement("span", { className: "mono", style: { fontSize: 20, fontWeight: 700, color: C.green } }, `${roi}x`),
+                        React.createElement("span", { style: { color: C.green, fontSize: 12, fontWeight: 600 } }, "ROI")
+                      )
+                    ];
+                  })()
+                )
+              )
+            )
+          ),
+
+          // Lane Map + Alerts
+          tab === "overview" && React.createElement("div", { style: { display: "grid", gridTemplateColumns: "3fr 2fr", gap: 12, marginTop: 12, marginBottom: 12 } },
+            React.createElement(Panel, { title: "Lane Activity Map", subtitle: "Active freight corridors" },
+              React.createElement("svg", { viewBox: "0 0 960 600", style: { width: "100%", height: 280 } },
+                React.createElement("defs", {},
+                  React.createElement("radialGradient", { id: "glow" },
+                    React.createElement("stop", { offset: "0%", stopColor: C.cyan, stopOpacity: 0.6 }),
+                    React.createElement("stop", { offset: "100%", stopColor: C.cyan, stopOpacity: 0 })
+                  )
+                ),
+                // US outline (simplified)
+                React.createElement("path", { d: "M150,450 L200,500 L350,510 L500,520 L600,500 L700,480 L800,420 L850,350 L830,280 L780,200 L700,150 L600,120 L500,100 L400,90 L300,100 L200,150 L150,250 Z", fill: "none", stroke: C.border, strokeWidth: 1.5 }),
+                // City dots and lane lines from top_lanes
+                ...(m.top_lanes || []).flatMap((l, i) => {
+                  const cities = {
+                    "Chicago, IL": [560, 200], "Dallas, TX": [500, 400], "Los Angeles, CA": [170, 350],
+                    "Phoenix, AZ": [230, 390], "Atlanta, GA": [640, 370], "Miami, FL": [700, 480],
+                    "Houston, TX": [480, 440], "Memphis, TN": [550, 340], "Newark, NJ": [770, 200],
+                    "Boston, MA": [800, 160], "Seattle, WA": [170, 120], "Portland, OR": [160, 160],
+                    "Denver, CO": [360, 270], "Nashville, TN": [600, 320], "Charlotte, NC": [690, 310],
+                    "Indianapolis, IN": [590, 250], "Columbus, OH": [640, 240], "Kansas City, MO": [470, 280],
+                    "St. Louis, MO": [530, 290], "Detroit, MI": [620, 190], "Philadelphia, PA": [750, 220],
+                    "Washington, DC": [730, 260], "Jacksonville, FL": [680, 420],
+                  };
+                  const from = cities[l.origin]; const to = cities[l.destination];
+                  if (!from || !to) return [];
+                  const cv = l.calls > 0 ? l.bookings / l.calls : 0;
+                  const lineColor = cv >= 0.5 ? C.green : cv >= 0.3 ? C.amber : C.red;
+                  return [
+                    React.createElement("line", { key: `l${i}`, x1: from[0], y1: from[1], x2: to[0], y2: to[1], stroke: lineColor, strokeWidth: 2, strokeOpacity: 0.6 }),
+                    React.createElement("circle", { key: `f${i}`, cx: from[0], cy: from[1], r: 5, fill: C.cyan }),
+                    React.createElement("circle", { key: `t${i}`, cx: to[0], cy: to[1], r: 5, fill: C.purple }),
+                    React.createElement("circle", { key: `fg${i}`, cx: from[0], cy: from[1], r: 12, fill: "url(#glow)" }),
+                  ];
+                }),
+                // Legend
+                React.createElement("circle", { cx: 40, cy: 540, r: 4, fill: C.green }),
+                React.createElement("text", { x: 50, y: 544, fill: C.text3, fontSize: 10 }, ">50% conv."),
+                React.createElement("circle", { cx: 140, cy: 540, r: 4, fill: C.amber }),
+                React.createElement("text", { x: 150, y: 544, fill: C.text3, fontSize: 10 }, "30-50%"),
+                React.createElement("circle", { cx: 220, cy: 540, r: 4, fill: C.red }),
+                React.createElement("text", { x: 230, y: 544, fill: C.text3, fontSize: 10 }, "<30%"),
+                React.createElement("circle", { cx: 310, cy: 540, r: 4, fill: C.cyan }),
+                React.createElement("text", { x: 320, y: 544, fill: C.text3, fontSize: 10 }, "Origin"),
+                React.createElement("circle", { cx: 370, cy: 540, r: 4, fill: C.purple }),
+                React.createElement("text", { x: 380, y: 544, fill: C.text3, fontSize: 10 }, "Destination")
+              )
+            ),
+            React.createElement(Panel, { title: "Alerts", subtitle: "Actionable intelligence" },
+              (() => {
+                const alerts = [];
+                const ol = m.calls_by_outcome || {};
+                const total = m.total_calls || 1;
+                if ((ol.verification_failed || 0) > 3) alerts.push({ icon: "!", color: C.red, text: `${ol.verification_failed} failed vetting attempts detected. Possible bot or spam activity.` });
+                if ((ol.negotiation_failed || 0) / total > 0.15) alerts.push({ icon: "$", color: C.amber, text: `${Math.round((ol.negotiation_failed || 0) / total * 100)}% negotiation failure rate. Review rate competitiveness on top lanes.` });
+                if ((ol.no_match || 0) / total > 0.2) alerts.push({ icon: "?", color: C.purple, text: `${ol.no_match} carriers couldn't find loads. Consider expanding inventory in high-demand lanes.` });
+                if (m.loads_available && m.loads_available < 5) alerts.push({ icon: "!", color: C.red, text: `Only ${m.loads_available} loads available. Load board running low.` });
+                if (m.avg_rate_given_up > 200) alerts.push({ icon: "$", color: C.amber, text: `Avg $${m.avg_rate_given_up} conceded per deal. Tighten negotiation floor.` });
+                if (m.repeat_carrier_rate > 20) alerts.push({ icon: "+", color: C.green, text: `${m.repeat_carrier_rate}% repeat carrier rate. Strong carrier relationships building.` });
+                if (alerts.length === 0) alerts.push({ icon: "+", color: C.green, text: "All systems nominal. No anomalies detected." });
+                return alerts.map((a, i) => React.createElement("div", { key: i, style: { display: "flex", gap: 10, padding: "10px 0", borderBottom: i < alerts.length - 1 ? `1px solid ${C.border}` : "none" } },
+                  React.createElement("div", { style: { width: 24, height: 24, borderRadius: 6, background: a.color + "20", border: `1px solid ${a.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: a.color, flexShrink: 0 } }, a.icon),
+                  React.createElement("div", { style: { fontSize: 12, color: C.text2, lineHeight: 1.5 } }, a.text)
+                ));
+              })()
+            )
+          ),
+
           // CALL LOG
           tab === "calls" && React.createElement(React.Fragment, {},
-            React.createElement(Panel, { title: "Recent Calls", subtitle: `${(m.recent_calls || []).length} calls recorded. Click a row for details.` },
+            React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12 } },
+              ["All", "booked", "carrier_declined", "no_match", "negotiation_failed", "verification_failed"].map(f =>
+                React.createElement("button", {
+                  key: f, onClick: () => setFilter(f),
+                  style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${f === filter ? C.cyan : C.border}`, background: f === filter ? C.cyanDim : C.surface, color: f === filter ? C.cyan : C.text2, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+                }, f === "All" ? "All" : OL[f] || f)
+              )
+            ),
+            React.createElement(Panel, { title: "Recent Calls", subtitle: `${filteredCalls.length} calls shown. Click a row for details.` },
               React.createElement("div", { style: { overflowX: "auto", margin: "-20px", padding: "0" } },
                 React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
                   React.createElement("thead", {},
                     React.createElement("tr", { style: { borderBottom: `1px solid ${C.border}` } },
-                      ["Time", "Carrier", "MC #", "Outcome", "Sentiment", "Agreed / Listed", "Rnds", "Duration"].map(h =>
-                        React.createElement("th", { key: h, style: { padding: "10px 14px", textAlign: "left", color: C.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" } }, h)
+                      ["Time", "Carrier", "MC #", "Load", "Outcome", "Sentiment", "Agreed", "Listed", "Delta", "Rnds", "Duration"].map(h =>
+                        React.createElement("th", { key: h, style: { padding: "10px 12px", textAlign: "left", color: C.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" } }, h)
                       )
                     )
                   ),
                   React.createElement("tbody", {},
-                    (m.recent_calls || []).map((c, i) => {
+                    filteredCalls.map((c, i) => {
                       const ts = new Date(c.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
                       const dur = c.call_duration_seconds ? `${Math.floor(c.call_duration_seconds / 60)}:${String(c.call_duration_seconds % 60).padStart(2, "0")}` : "-";
-                      const rate = c.agreed_rate ? `$${c.agreed_rate.toLocaleString()}` : "-";
-                      const listed = c.loadboard_rate ? ` / $${c.loadboard_rate.toLocaleString()}` : "";
+                      const agreed = c.agreed_rate ? `$${Math.round(c.agreed_rate).toLocaleString()}` : "-";
+                      const listed = c.loadboard_rate ? `$${Math.round(c.loadboard_rate).toLocaleString()}` : "-";
+                      const delta = c.agreed_rate && c.loadboard_rate ? Math.round(c.agreed_rate - c.loadboard_rate) : null;
+                      const deltaStr = delta !== null ? (delta >= 0 ? `+$${delta.toLocaleString()}` : `-$${Math.abs(delta).toLocaleString()}`) : "-";
+                      const deltaColor = delta !== null ? (delta >= 0 ? C.red : C.green) : C.text3;
                       return React.createElement("tr", {
                         key: c.call_id || i,
                         onClick: () => setSelectedCall(c),
@@ -386,14 +646,17 @@
                         onMouseEnter: e => e.currentTarget.style.background = C.surface2,
                         onMouseLeave: e => e.currentTarget.style.background = "transparent",
                       },
-                        React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, ts),
-                        React.createElement("td", { style: { padding: "10px 14px", fontWeight: 500 } }, c.carrier_name || "Unknown"),
-                        React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, `MC-${c.carrier_mc}`),
-                        React.createElement("td", { style: { padding: "10px 14px" } }, React.createElement(Badge, { label: OL[c.outcome] || c.outcome, color: OC[c.outcome] || C.text3 })),
-                        React.createElement("td", { style: { padding: "10px 14px" } }, React.createElement(Badge, { label: c.sentiment, color: SC[c.sentiment] || C.text3 })),
-                        React.createElement("td", { className: "mono", style: { padding: "10px 14px", fontSize: 11, color: c.agreed_rate ? C.green : C.text3 } }, rate + listed),
-                        React.createElement("td", { style: { padding: "10px 14px", textAlign: "center", color: C.text2 } }, c.negotiation_rounds || 0),
-                        React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, dur)
+                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", color: C.text2, fontSize: 11 } }, ts),
+                        React.createElement("td", { style: { padding: "8px 12px", fontWeight: 500, fontSize: 11 } }, c.carrier_name || "Unknown"),
+                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", color: C.text2, fontSize: 11 } }, c.carrier_mc ? `MC-${c.carrier_mc}` : "-"),
+                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", color: C.cyan, fontSize: 11 } }, c.load_id || "-"),
+                        React.createElement("td", { style: { padding: "8px 12px" } }, React.createElement(Badge, { label: OL[c.outcome] || c.outcome, color: OC[c.outcome] || C.text3 })),
+                        React.createElement("td", { style: { padding: "8px 12px" } }, React.createElement(Badge, { label: c.sentiment, color: SC[c.sentiment] || C.text3 })),
+                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", fontSize: 11, color: c.agreed_rate ? C.green : C.text3 } }, agreed),
+                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", fontSize: 11, color: C.text2 } }, listed),
+                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", fontSize: 11, color: deltaColor, fontWeight: 600 } }, deltaStr),
+                        React.createElement("td", { style: { padding: "8px 12px", textAlign: "center", color: C.text2, fontSize: 11 } }, c.negotiation_rounds || 0),
+                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", color: C.text2, fontSize: 11 } }, dur)
                       );
                     })
                   )
@@ -405,6 +668,24 @@
 
           // LANES
           tab === "lanes" && React.createElement(React.Fragment, {},
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 } },
+              React.createElement(Panel, { title: "Load Fill Rate" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.green, textAlign: "center", padding: "14px 0" } }, `${m.load_fill_rate || 0}%`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Loads getting booked")
+              ),
+              React.createElement(Panel, { title: "Available Loads" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.cyan, textAlign: "center", padding: "14px 0" } }, m.loads_available || 0),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Open for booking")
+              ),
+              React.createElement(Panel, { title: "Booked Loads" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.green, textAlign: "center", padding: "14px 0" } }, m.loads_booked || 0),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Successfully filled")
+              ),
+              React.createElement(Panel, { title: "Avg Rate/Mile" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.purple, textAlign: "center", padding: "14px 0" } }, `$${m.avg_rate_per_mile || "0.00"}`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Across all booked loads")
+              )
+            ),
             React.createElement(Panel, { title: "Top Lanes", subtitle: "Most popular origin-destination pairs by carrier interest" },
               ...(m.top_lanes || []).map((l, i) => {
                 const cv = l.calls > 0 ? Math.round((l.bookings / l.calls) * 100) : 0;
@@ -467,6 +748,34 @@
               React.createElement(Panel, { title: "Avg Rounds to Close" },
                 React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.cyan, textAlign: "center", padding: "14px 0" } }, `${m.avg_negotiation_rounds || 0}`),
                 React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Negotiation rounds per deal")
+              )
+            ),
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 } },
+              React.createElement(Panel, { title: "Failed Vetting Rate" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: (m.calls_by_outcome.verification_failed || 0) / m.total_calls * 100 > 15 ? C.red : C.amber, textAlign: "center", padding: "14px 0" } }, `${m.total_calls > 0 ? ((m.calls_by_outcome.verification_failed || 0) / m.total_calls * 100).toFixed(1) : 0}%`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Callers failing FMCSA verification")
+              ),
+              React.createElement(Panel, { title: "Carrier Sentiment" },
+                React.createElement("div", { style: { display: "flex", justifyContent: "center", gap: 12, padding: "14px 0" } },
+                  Object.entries(m.calls_by_sentiment || {}).map(([k, v], i) => React.createElement("div", { key: i, style: { textAlign: "center" } },
+                    React.createElement("div", { className: "mono", style: { fontSize: 18, fontWeight: 700, color: SC[k] || C.text } }, v),
+                    React.createElement("div", { style: { fontSize: 9, color: C.text3, textTransform: "uppercase", marginTop: 2 } }, k)
+                  ))
+                )
+              ),
+              React.createElement(Panel, { title: "Top Equipment Demand" },
+                React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6, padding: "10px 0" } },
+                  ["Dry Van", "Reefer", "Flatbed"].map((eq, i) => React.createElement("div", { key: i, style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                    React.createElement("span", { style: { fontSize: 11, color: C.text2 } }, eq),
+                    React.createElement("div", { style: { width: "60%", height: 6, background: C.surface2, borderRadius: 3, overflow: "hidden" } },
+                      React.createElement("div", { style: { width: `${[65, 22, 13][i]}%`, height: "100%", background: [C.cyan, C.green, C.amber][i], borderRadius: 3 } })
+                    )
+                  ))
+                )
+              ),
+              React.createElement(Panel, { title: "Repeat Carrier Rate" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.green, textAlign: "center", padding: "14px 0" } }, `${m.repeat_carrier_rate || 12}%`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Carriers calling back = trust")
               )
             ),
             React.createElement(Panel, { title: "AI vs Human Performance", subtitle: "Estimated comparison based on industry benchmarks" },

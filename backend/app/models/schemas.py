@@ -237,3 +237,8 @@ class DashboardMetrics(BaseModel):
     floor_rate_hit_rate: float = 0
     avg_rate_given_up: float = 0
     avg_call_duration: float = 0
+    repeat_carrier_rate: float = 0
+    load_fill_rate: float = 0
+    loads_available: int = 0
+    loads_booked: int = 0
+    avg_rate_per_mile: str = "0.00"
