@@ -143,6 +143,19 @@ class CallLog(BaseModel):
             # Default outcome if missing
             if "outcome" not in data or not data.get("outcome"):
                 data["outcome"] = "unknown"
+            # Clean sentiment - may come as boolean from real-time classifier
+            sent = data.get("sentiment")
+            if isinstance(sent, bool):
+                data["sentiment"] = "positive" if sent else "negative"
+            elif sent is None or (isinstance(sent, str) and sent.strip().lower() in ("", "null", "none")):
+                data["sentiment"] = "neutral"
+            # Handle extra fields from HappyRobot that aren't in our schema
+            for extra in ["agent_final_offer", "carrier_final_offer"]:
+                val = data.pop(extra, None)
+                if extra == "agent_final_offer" and val and val != "":
+                    data.setdefault("final_offer", val)
+                elif extra == "carrier_final_offer" and val and val != "":
+                    data.setdefault("initial_offer", val)
             # Clean empty strings to None for numeric fields
             for f in ["agreed_rate", "initial_offer", "final_offer", "loadboard_rate"]:
                 v = data.get(f)
