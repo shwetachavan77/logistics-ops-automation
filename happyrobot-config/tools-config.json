@@ -29,7 +29,7 @@
         {
           "type": "webhook",
           "method": "POST",
-          "url": "https://YOUR_API_HOST/api/verify-carrier",
+          "url": "https://logistics-ops-automation-production.up.railway.app/api/verify-carrier",
           "content_type": "application/json",
           "body_mode": "raw",
           "body": {
@@ -101,7 +101,7 @@
         {
           "type": "webhook",
           "method": "POST",
-          "url": "https://YOUR_API_HOST/api/search-loads",
+          "url": "https://logistics-ops-automation-production.up.railway.app/api/search-loads",
           "content_type": "application/json",
           "body_mode": "raw",
           "body": {
@@ -159,7 +159,7 @@
         {
           "type": "webhook",
           "method": "POST",
-          "url": "https://YOUR_API_HOST/api/negotiate",
+          "url": "https://logistics-ops-automation-production.up.railway.app/api/negotiate",
           "content_type": "application/json",
           "body_mode": "raw",
           "body": {
@@ -219,7 +219,7 @@
         {
           "type": "webhook",
           "method": "POST",
-          "url": "https://YOUR_API_HOST/api/transfer?call_id=@call_id&carrier_name=@carrier_name",
+          "url": "https://logistics-ops-automation-production.up.railway.app/api/transfer?call_id=@call_id&carrier_name=@carrier_name",
           "content_type": "application/json"
         }
       ],

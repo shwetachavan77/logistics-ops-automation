@@ -1,24 +1,21 @@
-"""Pydantic schemas for loads, calls, negotiations, and API payloads."""
+"""Pydantic schemas for loads, calls, negotiations, alerts, and API payloads."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List, Union
 from datetime import datetime
 from enum import Enum
 
 
-# Enums for classification
-
 class CallOutcome(str, Enum):
-    """Call outcome tags for the classify node."""
     BOOKED = "booked"
     CARRIER_DECLINED = "carrier_declined"
     NO_MATCH = "no_match"
     VERIFICATION_FAILED = "verification_failed"
     NEGOTIATION_FAILED = "negotiation_failed"
+    UNKNOWN = "unknown"
 
 
 class Sentiment(str, Enum):
-    """Carrier sentiment from real-time analysis."""
     POSITIVE = "positive"
     NEUTRAL = "neutral"
     NEGATIVE = "negative"
@@ -26,7 +23,6 @@ class Sentiment(str, Enum):
 
 
 class EquipmentType(str, Enum):
-    """Common trailer types."""
     DRY_VAN = "Dry Van"
     REEFER = "Reefer"
     FLATBED = "Flatbed"
@@ -35,23 +31,20 @@ class EquipmentType(str, Enum):
     BOX_TRUCK = "Box Truck"
 
 
-# Load model
-
 class Load(BaseModel):
-    """A freight load available for booking."""
     load_id: str = Field(..., description="Unique identifier for the load")
     origin: str = Field(..., description="Starting location (city, state)")
     destination: str = Field(..., description="Delivery location (city, state)")
-    pickup_datetime: datetime = Field(..., description="When the load needs to be picked up")
-    delivery_datetime: datetime = Field(..., description="When the load needs to be delivered")
-    equipment_type: str = Field(..., description="Type of trailer needed")
-    loadboard_rate: float = Field(..., description="Listed rate in USD")
-    notes: Optional[str] = Field(None, description="Special instructions or notes")
-    weight: Optional[float] = Field(None, description="Weight in pounds")
-    commodity_type: Optional[str] = Field(None, description="Type of goods being shipped")
-    num_of_pieces: Optional[int] = Field(None, description="Number of items/pallets")
-    miles: Optional[float] = Field(None, description="Total distance in miles")
-    dimensions: Optional[str] = Field(None, description="Size measurements if applicable")
+    pickup_datetime: datetime
+    delivery_datetime: datetime
+    equipment_type: str
+    loadboard_rate: float
+    notes: Optional[str] = None
+    weight: Optional[float] = None
+    commodity_type: Optional[str] = None
+    num_of_pieces: Optional[int] = None
+    miles: Optional[float] = None
+    dimensions: Optional[str] = None
 
     class Config:
         json_schema_extra = {
@@ -72,17 +65,15 @@ class Load(BaseModel):
         }
 
 
-# FMCSA Carrier verification
+# FMCSA verification
 
 class CarrierVerificationRequest(BaseModel):
-    """Request to verify a carrier's MC number."""
     mc_number: Union[str, int, float] = Field(..., description="Motor Carrier number to verify")
 
 
 class CarrierVerificationResponse(BaseModel):
-    """FMCSA verification result."""
     mc_number: str
-    is_eligible: bool = Field(..., description="Whether carrier can haul for us")
+    is_eligible: bool
     carrier_name: Optional[str] = None
     dot_number: Optional[str] = None
     status: Optional[str] = None
@@ -94,15 +85,13 @@ class CarrierVerificationResponse(BaseModel):
 # Load search
 
 class LoadSearchRequest(BaseModel):
-    """What the carrier is looking for."""
-    origin: Optional[str] = Field(None, description="Where they want to pick up")
-    destination: Optional[str] = Field(None, description="Where they want to deliver")
-    equipment_type: Optional[str] = Field(None, description="What trailer they have")
-    pickup_date: Optional[str] = Field(None, description="When they're available")
+    origin: Optional[str] = None
+    destination: Optional[str] = None
+    equipment_type: Optional[str] = None
+    pickup_date: Optional[str] = None
 
 
 class LoadSearchResponse(BaseModel):
-    """Search results."""
     loads: List[Load]
     total_found: int
 
@@ -110,15 +99,13 @@ class LoadSearchResponse(BaseModel):
 # Negotiation
 
 class NegotiationRequest(BaseModel):
-    """Carrier's price offer for a load."""
-    call_id: str = Field(..., description="Unique call identifier")
-    load_id: str = Field(..., description="Which load they're negotiating on")
-    carrier_offer: float = Field(..., description="What the carrier is asking for in USD")
-    round_number: int = Field(..., description="Which negotiation round (1-3)")
+    call_id: Union[str, int] = Field(..., description="Unique call identifier")
+    load_id: Union[str, int] = Field(..., description="Which load being negotiated")
+    carrier_offer: Union[str, int, float] = Field(..., description="Carrier's asking price in USD")
+    round_number: Union[str, int] = Field(..., description="Negotiation round (1-3)")
 
 
 class NegotiationResponse(BaseModel):
-    """Our response to the carrier's offer."""
     accepted: bool
     counter_offer: Optional[float] = None
     message: str
@@ -130,13 +117,12 @@ class NegotiationResponse(BaseModel):
 # Call logging
 
 class CallLog(BaseModel):
-    """Logged after every call via webhook."""
     call_id: str
     carrier_mc: Optional[str] = None
     carrier_name: Optional[str] = None
     load_id: Optional[str] = None
-    outcome: CallOutcome
-    sentiment: Sentiment = Sentiment.NEUTRAL
+    outcome: str = "unknown"
+    sentiment: str = "neutral"
     agreed_rate: Optional[float] = None
     negotiation_rounds: int = 0
     initial_offer: Optional[float] = None
@@ -144,19 +130,99 @@ class CallLog(BaseModel):
     loadboard_rate: Optional[float] = None
     call_duration_seconds: Optional[int] = None
     transcript: Optional[str] = None
+    notes: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+    @model_validator(mode="before")
+    @classmethod
+    def clean_inputs(cls, data):
+        if isinstance(data, dict):
+            # Convert carrier_mc to string
+            if "carrier_mc" in data and data["carrier_mc"] is not None:
+                data["carrier_mc"] = str(data["carrier_mc"])
+            # Default outcome if missing
+            if "outcome" not in data or not data.get("outcome"):
+                data["outcome"] = "unknown"
+            # Clean empty strings to None for numeric fields
+            for f in ["agreed_rate", "initial_offer", "final_offer", "loadboard_rate"]:
+                v = data.get(f)
+                if v is not None and isinstance(v, str):
+                    v = v.strip().replace("$", "").replace(",", "")
+                    if v.lower() in ("", "null", "none"):
+                        data[f] = None
+                    else:
+                        try:
+                            data[f] = float(v)
+                        except ValueError:
+                            data[f] = None
+            # Clean negotiation_rounds
+            nr = data.get("negotiation_rounds")
+            if nr is not None:
+                if isinstance(nr, str):
+                    try:
+                        data["negotiation_rounds"] = int(float(nr))
+                    except (ValueError, TypeError):
+                        data["negotiation_rounds"] = 0
+                elif isinstance(nr, float):
+                    data["negotiation_rounds"] = int(nr)
+        return data
 
 
 class CallLogResponse(BaseModel):
-    """Response after logging a call."""
     call_id: str
     status: str = "logged"
+
+
+# Missed opportunity alert
+
+class MissedOpportunityAlert(BaseModel):
+    call_id: str
+    carrier_mc: Optional[str] = None
+    carrier_name: Optional[str] = None
+    load_id: Optional[str] = None
+    final_offer: Optional[Union[str, int, float]] = None
+    loadboard_rate: Optional[Union[str, int, float]] = None
+    gap: Optional[float] = None
+    message: Optional[str] = None
+
+
+# Rate confirmation
+
+class RateConfirmation(BaseModel):
+    call_id: str
+    carrier_mc: Optional[str] = None
+    carrier_name: Optional[str] = None
+    load_id: Optional[str] = None
+    agreed_rate: Optional[Union[str, int, float]] = None
+    origin: Optional[str] = None
+    destination: Optional[str] = None
+    pickup_datetime: Optional[str] = None
+    equipment_type: Optional[str] = None
+
+
+class RateConfirmationResponse(BaseModel):
+    status: str = "confirmation_sent"
+    confirmation_id: str
+    message: str
+
+
+# Carrier history / scoring
+
+class CarrierHistoryResponse(BaseModel):
+    carrier_mc: str
+    total_calls: int
+    total_bookings: int
+    booking_rate: float
+    avg_negotiation_rounds: float
+    avg_agreed_rate: Optional[float] = None
+    last_call_date: Optional[str] = None
+    reliability_score: Optional[float] = None
+    lanes: List[dict] = []
 
 
 # Dashboard metrics
 
 class DashboardMetrics(BaseModel):
-    """Aggregated metrics for the dashboard."""
     total_calls: int
     calls_by_outcome: dict
     calls_by_sentiment: dict

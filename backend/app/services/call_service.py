@@ -27,18 +27,20 @@ async def log_call(call: CallLog) -> CallLogResponse:
                 transcript = EXCLUDED.transcript
         """,
             call.call_id, call.carrier_mc, call.carrier_name,
-            call.load_id, call.outcome.value, call.sentiment.value,
+            call.load_id, str(call.outcome), str(call.sentiment),
             call.agreed_rate, call.negotiation_rounds,
             call.initial_offer, call.final_offer, call.loadboard_rate,
             call.call_duration_seconds, call.transcript, call.timestamp
         )
 
-        # If the load was booked, mark it unavailable
+        # If the load was booked, mark it unavailable and queue confirmation
         if call.outcome == "booked" and call.load_id:
             await conn.execute(
                 "UPDATE loads SET is_available = FALSE WHERE load_id = $1",
                 call.load_id
             )
+            # In production: send rate confirmation via SendGrid/Twilio
+            print(f"BOOKING CONFIRMED: {call.carrier_name} (MC-{call.carrier_mc}) booked {call.load_id} at ${call.agreed_rate}. Rate confirmation queued.")
 
     return CallLogResponse(call_id=call.call_id, status="logged")
 

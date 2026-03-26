@@ -6,7 +6,7 @@ from app.db.database import Database
 from app.models.schemas import Load, LoadSearchRequest, LoadSearchResponse
 
 
-async def search_loads(request: LoadSearchRequest) -> LoadSearchResponse:
+async def search_loads(request: LoadSearchRequest, allow_broad: bool = False) -> LoadSearchResponse:
     """
     Search available loads matching carrier criteria.
     Fuzzy match on city names since carriers give partial info.
@@ -17,21 +17,29 @@ async def search_loads(request: LoadSearchRequest) -> LoadSearchResponse:
         params = []
         param_idx = 1
 
+        # Words that mean "no preference"
+        skip_words = {"anywhere", "any", "anywher", "doesn't matter", "dont care", "don't care", "no preference", "open", "flexible"}
+
         if request.origin:
-            # Fuzzy match: "Chicago" matches "Chicago, IL"
-            conditions.append(f"LOWER(origin) LIKE ${param_idx}")
-            params.append(f"%{request.origin.lower().strip()}%")
-            param_idx += 1
+            origin_clean = request.origin.lower().strip()
+            if origin_clean not in skip_words:
+                conditions.append(f"LOWER(origin) LIKE ${param_idx}")
+                params.append(f"%{origin_clean}%")
+                param_idx += 1
 
         if request.destination:
-            conditions.append(f"LOWER(destination) LIKE ${param_idx}")
-            params.append(f"%{request.destination.lower().strip()}%")
-            param_idx += 1
+            dest_clean = request.destination.lower().strip()
+            if dest_clean not in skip_words:
+                conditions.append(f"LOWER(destination) LIKE ${param_idx}")
+                params.append(f"%{dest_clean}%")
+                param_idx += 1
 
         if request.equipment_type:
-            conditions.append(f"LOWER(equipment_type) LIKE ${param_idx}")
-            params.append(f"%{request.equipment_type.lower().strip()}%")
-            param_idx += 1
+            equip_clean = request.equipment_type.lower().strip()
+            if equip_clean not in skip_words and equip_clean != "any":
+                conditions.append(f"LOWER(equipment_type) LIKE ${param_idx}")
+                params.append(f"%{equip_clean}%")
+                param_idx += 1
 
         if request.pickup_date:
             # Match loads with pickup on or after the requested date
@@ -44,6 +52,14 @@ async def search_loads(request: LoadSearchRequest) -> LoadSearchResponse:
                 pass  # Skip bad date rather than failing the search
 
         where_clause = " AND ".join(conditions)
+
+        # If no filters beyond is_available, search is too broad (voice agent only)
+        if len(conditions) == 1 and not allow_broad:
+            return LoadSearchResponse(
+                loads=[],
+                total_found=0
+            )
+
         query = f"""
             SELECT * FROM loads
             WHERE {where_clause}

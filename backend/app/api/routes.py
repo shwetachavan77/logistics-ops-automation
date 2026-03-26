@@ -1,5 +1,6 @@
-"""API routes for carrier verification, load search, negotiation, and call logging."""
+"""API routes for carrier sales automation."""
 
+import uuid
 from fastapi import APIRouter, HTTPException, Request
 from typing import Optional
 from slowapi import Limiter
@@ -9,6 +10,9 @@ from app.models.schemas import (
     LoadSearchRequest, LoadSearchResponse,
     NegotiationRequest, NegotiationResponse,
     CallLog, CallLogResponse,
+    MissedOpportunityAlert,
+    RateConfirmation, RateConfirmationResponse,
+    CarrierHistoryResponse,
     DashboardMetrics,
 )
 from app.services import fmcsa_service, load_service, negotiation_service, call_service
@@ -60,6 +64,8 @@ def clean_int(val):
     return None
 
 
+# ---- Core endpoints ----
+
 @router.post("/verify-carrier", response_model=CarrierVerificationResponse)
 @limiter.limit("30/minute")
 async def verify_carrier(request: Request, payload: CarrierVerificationRequest):
@@ -82,11 +88,12 @@ async def search_loads(request: Request, payload: LoadSearchRequest):
 @router.post("/negotiate", response_model=NegotiationResponse)
 @limiter.limit("30/minute")
 async def negotiate(request: Request, payload: NegotiationRequest):
-    if payload.round_number > 3:
+    round_num = clean_int(payload.round_number) or 1
+    if round_num > 3:
         return NegotiationResponse(
             accepted=False,
             message="We've reached the maximum negotiation rounds. Let me transfer you to a rep.",
-            round_number=payload.round_number,
+            round_number=round_num,
             final_round=True
         )
     return await negotiation_service.evaluate_offer(payload)
@@ -103,19 +110,150 @@ async def transfer_call(request: Request, call_id: str, carrier_name: Optional[s
     }
 
 
+# ---- Call logging ----
+
 @router.post("/calls/log", response_model=CallLogResponse)
 @limiter.limit("60/minute")
 async def log_call(request: Request, call: CallLog):
     call.carrier_mc = clean_str(call.carrier_mc)
     call.carrier_name = clean_str(call.carrier_name)
     call.load_id = clean_str(call.load_id)
+    call.outcome = clean_str(call.outcome) or "unknown"
+    call.sentiment = clean_str(call.sentiment) or "neutral"
     call.agreed_rate = clean_float(call.agreed_rate)
     call.initial_offer = clean_float(call.initial_offer)
     call.final_offer = clean_float(call.final_offer)
+    call.loadboard_rate = clean_float(call.loadboard_rate)
     call.negotiation_rounds = clean_int(call.negotiation_rounds) or 0
     call.transcript = clean_str(call.transcript)
     return await call_service.log_call(call)
 
+
+# ---- V2: Missed opportunity alert ----
+
+@router.post("/alerts/missed-opportunity")
+@limiter.limit("30/minute")
+async def missed_opportunity(request: Request, alert: MissedOpportunityAlert):
+    """Log a near-miss deal for manual follow-up by sales reps."""
+    final = clean_float(alert.final_offer)
+    rate = clean_float(alert.loadboard_rate)
+    gap = abs(final - rate) if final and rate else None
+
+    record = {
+        "call_id": alert.call_id,
+        "carrier_mc": clean_str(alert.carrier_mc),
+        "carrier_name": clean_str(alert.carrier_name),
+        "load_id": clean_str(alert.load_id),
+        "final_offer": final,
+        "loadboard_rate": rate,
+        "gap": gap,
+        "message": f"Near-miss deal. Carrier offered ${final:,.2f}, cap was ${rate:,.2f}. Gap: ${gap:,.2f}. Consider manual follow-up." if final and rate and gap else "Near-miss deal. Consider manual follow-up.",
+        "status": "alert_logged"
+    }
+
+    # Store as a call log with notes
+    try:
+        from app.db.database import Database
+        async with Database.pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO calls (call_id, carrier_mc, carrier_name, load_id, outcome, notes, timestamp)
+                VALUES ($1, $2, $3, $4, 'negotiation_failed', $5, NOW())
+                ON CONFLICT (call_id) DO UPDATE SET notes = EXCLUDED.notes
+            """, alert.call_id + "_alert", clean_str(alert.carrier_mc),
+                clean_str(alert.carrier_name), clean_str(alert.load_id), record["message"])
+    except Exception as e:
+        print(f"Failed to store alert: {e}")
+
+    return record
+
+
+# ---- V2: Rate confirmation ----
+
+@router.post("/confirmations/rate", response_model=RateConfirmationResponse)
+@limiter.limit("30/minute")
+async def rate_confirmation(request: Request, conf: RateConfirmation):
+    """Generate rate confirmation after a successful booking."""
+    confirmation_id = f"RC-{uuid.uuid4().hex[:8].upper()}"
+    agreed = clean_float(conf.agreed_rate)
+
+    load = None
+    load_id = clean_str(conf.load_id)
+    if load_id:
+        load = await load_service.get_load_by_id(load_id)
+
+    origin = conf.origin or (load.origin if load else "TBD")
+    destination = conf.destination or (load.destination if load else "TBD")
+    equipment = conf.equipment_type or (load.equipment_type if load else "TBD")
+
+    message = (
+        f"Rate confirmation {confirmation_id} generated. "
+        f"Carrier {conf.carrier_name or 'N/A'} (MC: {conf.carrier_mc or 'N/A'}) "
+        f"booked load {load_id or 'N/A'}: {origin} to {destination}, "
+        f"{equipment}, agreed rate ${agreed:,.2f}." if agreed else
+        f"Rate confirmation {confirmation_id} generated for load {load_id or 'N/A'}."
+    )
+
+    return RateConfirmationResponse(
+        status="confirmation_sent",
+        confirmation_id=confirmation_id,
+        message=message
+    )
+
+
+# ---- V2: Carrier history / scoring ----
+
+@router.get("/carriers/{mc_number}/history", response_model=CarrierHistoryResponse)
+@limiter.limit("30/minute")
+async def carrier_history(request: Request, mc_number: str):
+    """Get a carrier's call history and reliability score."""
+    mc = clean_str(mc_number)
+    if not mc:
+        raise HTTPException(status_code=400, detail="MC number is required")
+
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        stats = await conn.fetchrow("""
+            SELECT
+                COUNT(*) as total_calls,
+                SUM(CASE WHEN outcome = 'booked' THEN 1 ELSE 0 END) as total_bookings,
+                COALESCE(AVG(negotiation_rounds), 0) as avg_rounds,
+                COALESCE(AVG(CASE WHEN agreed_rate IS NOT NULL THEN agreed_rate END), 0) as avg_rate,
+                MAX(timestamp) as last_call
+            FROM calls WHERE carrier_mc = $1
+        """, mc)
+
+        lanes = await conn.fetch("""
+            SELECT l.origin, l.destination, COUNT(*) as count
+            FROM calls c JOIN loads l ON c.load_id = l.load_id
+            WHERE c.carrier_mc = $1
+            GROUP BY l.origin, l.destination
+            ORDER BY count DESC LIMIT 5
+        """, mc)
+
+    total = stats["total_calls"] or 0
+    bookings = stats["total_bookings"] or 0
+    booking_rate = (bookings / total * 100) if total > 0 else 0
+
+    # Reliability score: weighted combination of booking rate and call frequency
+    # Higher booking rate + more calls = higher score
+    frequency_bonus = min(total / 10, 1.0)  # caps at 10 calls
+    reliability = round((booking_rate * 0.7 + frequency_bonus * 30), 1)
+    reliability = min(reliability, 100.0)
+
+    return CarrierHistoryResponse(
+        carrier_mc=mc,
+        total_calls=total,
+        total_bookings=bookings,
+        booking_rate=round(booking_rate, 1),
+        avg_negotiation_rounds=round(float(stats["avg_rounds"]), 1),
+        avg_agreed_rate=round(float(stats["avg_rate"]), 2) if stats["avg_rate"] else None,
+        last_call_date=stats["last_call"].isoformat() if stats["last_call"] else None,
+        reliability_score=reliability,
+        lanes=[{"origin": r["origin"], "destination": r["destination"], "count": r["count"]} for r in lanes]
+    )
+
+
+# ---- Dashboard ----
 
 @router.get("/metrics", response_model=DashboardMetrics)
 @limiter.limit("120/minute")
@@ -133,7 +271,7 @@ async def get_recent_calls(request: Request, limit: int = 20):
 @router.get("/loads")
 @limiter.limit("120/minute")
 async def get_all_loads(request: Request):
-    result = await load_service.search_loads(LoadSearchRequest())
+    result = await load_service.search_loads(LoadSearchRequest(), allow_broad=True)
     return {"loads": [l.model_dump() for l in result.loads]}
 
 

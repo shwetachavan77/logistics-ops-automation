@@ -28,7 +28,7 @@
       "name": "Carrier Sales Agent (Sarah)",
       "config": {
         "prompt": "See agent-prompt.md - paste contents into the Prompt field",
-        "initial_message": "Thanks for calling Apex Freight, this is Sarah. Are you looking to book a load today?",
+        "initial_message": "Thanks for calling Happy RollBot Freight, this is Sarah. Are you looking to book a load today?",
         "voice": "English - Professional Female (e.g., 'Lily' or 'Jessica')",
         "llm_model": "GPT-4.1 (or latest available)",
         "recording_disclaimer": "natural",
@@ -51,7 +51,7 @@
       "name": "Classify Call Outcome",
       "config": {
         "input": "@Carrier Sales Agent (Sarah).transcript",
-        "prompt": "Classify this inbound carrier sales call based on its outcome. The call is between our AI sales agent Sarah (at Apex Freight Brokerage) and a carrier who called in looking to book a load.",
+        "prompt": "Classify this inbound carrier sales call based on its outcome. The call is between our AI sales agent Sarah (at Happy RollBot Freight) and a carrier who called in looking to book a load.",
         "tags": [
           {
             "name": "booked",
@@ -115,7 +115,7 @@
       "name": "Extract Call Data",
       "config": {
         "input": "@Carrier Sales Agent (Sarah).transcript",
-        "prompt": "Extract key data points from this inbound carrier sales call at Apex Freight Brokerage. The call is between our AI agent Sarah and a carrier looking to book a load.",
+        "prompt": "Extract key data points from this inbound carrier sales call at Happy RollBot Freight. The call is between our AI agent Sarah and a carrier looking to book a load.",
         "parameters": [
           {
             "name": "carrier_mc",
@@ -194,7 +194,7 @@
       "config": {
         "_how": "Add a Webhook POST node. This sends all extracted + classified data to our backend API for the metrics dashboard.",
         "method": "POST",
-        "url": "https://YOUR_API_HOST/api/calls/log",
+        "url": "https://logistics-ops-automation-production.up.railway.app/api/calls/log",
         "content_type": "application/json",
         "body_mode": "raw",
         "body": {
