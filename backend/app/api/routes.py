@@ -101,7 +101,15 @@ async def negotiate(request: Request, payload: NegotiationRequest):
 
 @router.post("/transfer")
 @limiter.limit("10/minute")
-async def transfer_call(request: Request, call_id: str, carrier_name: Optional[str] = None):
+async def transfer_call(request: Request, call_id: Optional[str] = None, carrier_name: Optional[str] = None):
+    # Accept from query params or JSON body
+    if not call_id:
+        try:
+            body = await request.json()
+            call_id = body.get("call_id", "unknown")
+            carrier_name = carrier_name or body.get("carrier_name")
+        except Exception:
+            call_id = "unknown"
     return {
         "status": "success",
         "message": "Transfer was successful and now you can wrap up the conversation.",
