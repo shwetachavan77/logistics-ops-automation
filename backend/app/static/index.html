@@ -183,8 +183,10 @@
       const [tab, setTab] = useState("overview");
       const [selectedCall, setSelectedCall] = useState(null);
       const [loading, setLoading] = useState(true);
+      const [demo, setDemo] = useState(false);
 
       const load = useCallback(async () => {
+        if (demo) { setM(mockData()); setLoading(false); return; }
         try {
           const apiKey = new URLSearchParams(window.location.search).get("key") || "";
           const headers = apiKey ? { "x-api-key": apiKey } : {};
@@ -198,7 +200,7 @@
           } else setM(mockData());
         } catch { setM(mockData()); }
         setLoading(false);
-      }, []);
+      }, [demo]);
 
       useEffect(() => { load(); }, [load]);
 
@@ -233,7 +235,7 @@
         // Header
         React.createElement("header", { style: { padding: "14px 28px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: C.surface } },
           React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
-            React.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${C.cyan}, ${C.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 } }, "CS"),
+            React.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${C.cyan}, ${C.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, cursor: "pointer" }, onClick: (e) => { if (e.detail === 3) { setDemo(d => !d); setLoading(true); } } }, "CS"),
             React.createElement("div", {},
               React.createElement("div", { style: { fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" } }, "Carrier Sales Command Center"),
               React.createElement("div", { style: { fontSize: 11, color: C.text3 } }, "AI Agent Analytics Dashboard")
@@ -244,6 +246,7 @@
               React.createElement("div", { style: { width: 6, height: 6, borderRadius: "50%", background: C.green, animation: "pulse 2s infinite" } }),
               React.createElement("span", { style: { color: C.green, fontSize: 11, fontWeight: 600 } }, "Agent Online")
             ),
+            demo && React.createElement("div", { style: { padding: "5px 10px", borderRadius: 6, background: C.amberDim, border: `1px solid ${C.amber}25`, fontSize: 11, fontWeight: 600, color: C.amber } }, "Demo"),
             React.createElement("button", {
               onClick: load,
               style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text2, fontSize: 11, cursor: "pointer", fontWeight: 500 }
