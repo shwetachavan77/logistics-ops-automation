@@ -357,7 +357,7 @@
             React.createElement("button", {
               onClick: () => { setLoading(true); setTimeout(load, 100); },
               style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text2, fontSize: 11, cursor: "pointer", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }
-            }, "\u21BB", " Refresh"),
+            }, "\u21BB Refresh"),
             React.createElement("button", {
               onClick: async () => {
                 try {
@@ -368,27 +368,16 @@
                 } catch { alert("Failed to refresh loads"); }
               },
               style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.cyan}25`, background: C.cyanDim, color: C.cyan, fontSize: 11, cursor: "pointer", fontWeight: 500 }
-            }, "+ Loads"),
+            }, "+ Fetch New Loads"),
             React.createElement("button", {
               onClick: async () => {
-                const r = await fetch("/api/simulate", { method: "POST" }).catch(() => null);
-                if (r?.ok) {
-                  const d = await r.json();
-                  if (d.status === "cap_reached") { alert("Dashboard is at capacity (100 calls)."); }
-                  else { load(); }
-                }
-              },
-              style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.cyan}30`, background: C.cyanDim, color: C.cyan, fontSize: 11, cursor: "pointer", fontWeight: 500 }
-            }, "+ Simulate 5 Calls"),
-            React.createElement("button", {
-              onClick: async () => {
-                if (!confirm("Clear ALL call data and reset loads? This cannot be undone.")) return;
+                if (!confirm("This will clear ALL call history and reset all loads to available. Are you sure?")) return;
                 const r = await fetch("/api/reset", { method: "POST", headers: { "x-api-key": new URLSearchParams(window.location.search).get("key") || "carrier-sales-dev-key-2026" } }).catch(() => null);
-                if (r?.ok) { const d = await r.json(); alert(`Reset complete. ${d.calls_deleted} calls cleared. ${d.loads_reset} loads reset.`); load(); }
+                if (r?.ok) { const d = await r.json(); alert(`Done! ${d.calls_deleted} calls cleared. ${d.loads_reset} loads reset to available.`); load(); }
                 else alert("Reset failed.");
               },
-              style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.red}30`, background: C.redDim, color: C.red, fontSize: 11, cursor: "pointer", fontWeight: 500 }
-            }, "Reset")
+              style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text3, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+            }, "\u00D7 Clear Data")
           )
         ),
 
