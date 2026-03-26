@@ -123,6 +123,8 @@ async def transfer_call(request: Request, call_id: Optional[str] = None, carrier
 @router.post("/calls/log", response_model=CallLogResponse)
 @limiter.limit("60/minute")
 async def log_call(request: Request, call: CallLog):
+    if not call.call_id:
+        call.call_id = f"call_{uuid.uuid4().hex[:12]}"
     call.carrier_mc = clean_str(call.carrier_mc)
     call.carrier_name = clean_str(call.carrier_name)
     call.load_id = clean_str(call.load_id)
@@ -133,6 +135,7 @@ async def log_call(request: Request, call: CallLog):
     call.final_offer = clean_float(call.final_offer)
     call.loadboard_rate = clean_float(call.loadboard_rate)
     call.negotiation_rounds = clean_int(call.negotiation_rounds) or 0
+    call.call_duration_seconds = clean_int(call.call_duration_seconds) or clean_int(call.call_duration)
     call.transcript = clean_str(call.transcript)
     call.notes = clean_str(call.notes)
     call.sms_text = clean_str(call.sms_text)
@@ -319,14 +322,22 @@ async def reset_data(request: Request):
 @router.post("/loads/refresh")
 @limiter.limit("10/minute")
 async def refresh_loads(request: Request):
-    """Re-seed loads if running low."""
+    """Reset loads to available and update pickup/delivery dates to be relative to today."""
     from app.db.database import Database
     async with Database.pool.acquire() as conn:
-        available = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
-        total = await conn.fetchval("SELECT COUNT(*) FROM loads")
-        if available >= 10:
-            return {"status": "ok", "message": f"Already have {available} loads available", "added": 0, "unbooked": available}
-        # Reset booked loads back to available
+        # Reset all loads to available
         await conn.execute("UPDATE loads SET is_available = TRUE")
+        # Shift all dates so the earliest pickup is tomorrow
+        earliest = await conn.fetchval("SELECT MIN(pickup_datetime) FROM loads")
+        if earliest:
+            from datetime import datetime, timedelta
+            now = datetime.utcnow()
+            tomorrow = now.replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=1)
+            shift = tomorrow - earliest
+            await conn.execute("""
+                UPDATE loads SET
+                    pickup_datetime = pickup_datetime + $1,
+                    delivery_datetime = delivery_datetime + $1
+            """, shift)
         unbooked = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
-    return {"status": "ok", "added": unbooked - available, "unbooked": unbooked}
+    return {"status": "ok", "message": f"All {unbooked} loads reset and dates updated to start tomorrow", "unbooked": unbooked}
