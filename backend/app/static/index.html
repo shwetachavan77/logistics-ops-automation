@@ -191,7 +191,7 @@
           React.createElement("div", { className: "mono", style: { fontSize: 11, color: C.text3, marginBottom: 12 } }, `MC-${call.carrier_mc || "N/A"} | ${call.call_id}`),
           React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 8 } },
             React.createElement(Badge, { label: OL[call.outcome] || call.outcome, color: OC[call.outcome] || C.text3 }),
-            React.createElement(Badge, { label: call.sentiment, color: SC[call.sentiment] || C.text3 })
+            React.createElement(Badge, { label: call.sentiment, color: SC[(call.sentiment || "").toLowerCase()] || C.text3 })
           ),
 
           // FMCSA Verification
@@ -255,12 +255,12 @@
           // Sentiment
           section("Sentiment Analysis"),
           React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 } },
-            React.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: (SC[call.sentiment] || C.text3) + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } },
-              call.sentiment === "positive" ? "+" : call.sentiment === "negative" ? "-" : call.sentiment === "aggressive" ? "!" : "~"
+            React.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: (SC[(call.sentiment || "").toLowerCase()] || C.text3) + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } },
+              (call.sentiment || "").toLowerCase() === "positive" ? "+" : (call.sentiment || "").toLowerCase() === "negative" ? "-" : (call.sentiment || "").toLowerCase() === "aggressive" ? "!" : "~"
             ),
             React.createElement("div", {},
-              React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: SC[call.sentiment] || C.text3, textTransform: "capitalize" } }, call.sentiment),
-              React.createElement("div", { style: { fontSize: 11, color: C.text3, marginTop: 2, lineHeight: 1.4 } }, sentimentReasons[call.sentiment] || "No sentiment data available.")
+              React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: SC[(call.sentiment || "").toLowerCase()] || C.text3, textTransform: "capitalize" } }, call.sentiment),
+              React.createElement("div", { style: { fontSize: 11, color: C.text3, marginTop: 2, lineHeight: 1.4 } }, sentimentReasons[(call.sentiment || "").toLowerCase()] || "No sentiment data available.")
             )
           ),
 
@@ -424,10 +424,10 @@
           sentiment_asc: (a, b) => { const o = { positive: 0, neutral: 1, negative: 2, aggressive: 3 }; return (o[b.sentiment] || 4) - (o[a.sentiment] || 4); },
           rate_desc: (a, b) => (b.agreed_rate || 0) - (a.agreed_rate || 0),
           rate_asc: (a, b) => (a.agreed_rate || 0) - (b.agreed_rate || 0),
-          listed_desc: (a, b) => (b.loadboard_rate || 0) - (a.loadboard_rate || 0),
-          listed_asc: (a, b) => (a.loadboard_rate || 0) - (b.loadboard_rate || 0),
-          delta_desc: (a, b) => ((b.agreed_rate || 0) - (b.loadboard_rate || 0)) - ((a.agreed_rate || 0) - (a.loadboard_rate || 0)),
-          delta_asc: (a, b) => ((a.agreed_rate || 0) - (a.loadboard_rate || 0)) - ((b.agreed_rate || 0) - (b.loadboard_rate || 0)),
+          listed_desc: (a, b) => ((b.real_loadboard_rate || b.loadboard_rate) || 0) - ((a.real_loadboard_rate || a.loadboard_rate) || 0),
+          listed_asc: (a, b) => ((a.real_loadboard_rate || a.loadboard_rate) || 0) - ((b.real_loadboard_rate || b.loadboard_rate) || 0),
+          delta_desc: (a, b) => ((b.agreed_rate || 0) - ((b.real_loadboard_rate || b.loadboard_rate) || 0)) - ((a.agreed_rate || 0) - ((a.real_loadboard_rate || a.loadboard_rate) || 0)),
+          delta_asc: (a, b) => ((a.agreed_rate || 0) - ((a.real_loadboard_rate || a.loadboard_rate) || 0)) - ((b.agreed_rate || 0) - ((b.real_loadboard_rate || b.loadboard_rate) || 0)),
           rounds_desc: (a, b) => (b.negotiation_rounds || 0) - (a.negotiation_rounds || 0),
           rounds_asc: (a, b) => (a.negotiation_rounds || 0) - (b.negotiation_rounds || 0),
           duration_desc: (a, b) => (b.call_duration_seconds || 0) - (a.call_duration_seconds || 0),
@@ -437,7 +437,7 @@
       })();
 
       const oData = Object.entries(m.calls_by_outcome || {}).map(([k, v]) => ({ name: OL[k] || k, value: v, color: OC[k] || C.text3 }));
-      const sData = Object.entries(m.calls_by_sentiment || {}).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v, color: SC[k] || C.text3 }));
+      const sData = Object.entries(m.calls_by_sentiment || {}).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v, color: SC[k.toLowerCase()] || C.text3 }));
       const nData = [
         { rounds: "0", count: (m.calls_by_outcome.no_match || 0) + (m.calls_by_outcome.verification_failed || 0), color: C.text3 },
         { rounds: "1", count: (m.rounds_breakdown || {})["1"] || 0, color: C.cyan },
@@ -826,8 +826,9 @@
                       const ts = new Date(c.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
                       const dur = c.call_duration_seconds ? `${Math.floor(c.call_duration_seconds / 60)}:${String(c.call_duration_seconds % 60).padStart(2, "0")}` : "-";
                       const agreed = c.agreed_rate ? `$${Math.round(c.agreed_rate).toLocaleString()}` : "-";
-                      const listed = c.loadboard_rate ? `$${Math.round(c.loadboard_rate).toLocaleString()}` : "-";
-                      const delta = c.agreed_rate && c.loadboard_rate ? Math.round(c.agreed_rate - c.loadboard_rate) : null;
+                      const listed = (c.real_loadboard_rate || c.loadboard_rate) ? `$${Math.round(c.real_loadboard_rate || c.loadboard_rate).toLocaleString()}` : "-";
+                      const lbRate = c.real_loadboard_rate || c.loadboard_rate;
+                      const delta = c.agreed_rate && lbRate ? Math.round(c.agreed_rate - lbRate) : null;
                       const deltaStr = delta !== null ? (delta >= 0 ? `+$${delta.toLocaleString()}` : `-$${Math.abs(delta).toLocaleString()}`) : "-";
                       const deltaColor = delta !== null ? (delta >= 0 ? C.red : C.green) : C.text3;
                       return React.createElement("tr", {
@@ -842,7 +843,7 @@
                         React.createElement("td", { className: "mono", style: { padding: "8px 12px", color: C.text2, fontSize: 11 } }, c.carrier_mc ? `MC-${c.carrier_mc}` : "-"),
                         React.createElement("td", { className: "mono", style: { padding: "8px 12px", color: C.cyan, fontSize: 11 } }, c.load_id || "-"),
                         React.createElement("td", { style: { padding: "8px 12px" } }, React.createElement(Badge, { label: OL[c.outcome] || c.outcome, color: OC[c.outcome] || C.text3 })),
-                        React.createElement("td", { style: { padding: "8px 12px" } }, React.createElement(Badge, { label: c.sentiment, color: SC[c.sentiment] || C.text3 })),
+                        React.createElement("td", { style: { padding: "8px 12px" } }, React.createElement(Badge, { label: c.sentiment, color: SC[(c.sentiment || "").toLowerCase()] || C.text3 })),
                         React.createElement("td", { className: "mono", style: { padding: "8px 12px", fontSize: 11, color: c.agreed_rate ? C.green : C.text3 } }, agreed),
                         React.createElement("td", { className: "mono", style: { padding: "8px 12px", fontSize: 11, color: C.text2 } }, listed),
                         React.createElement("td", { className: "mono", style: { padding: "8px 12px", fontSize: 11, color: deltaColor, fontWeight: 600 } }, deltaStr),
@@ -1007,7 +1008,7 @@
               React.createElement(Panel, { title: "Carrier Sentiment" },
                 React.createElement("div", { style: { display: "flex", justifyContent: "center", gap: 12, padding: "14px 0" } },
                   Object.entries(m.calls_by_sentiment || {}).map(([k, v], i) => React.createElement("div", { key: i, style: { textAlign: "center" } },
-                    React.createElement("div", { className: "mono", style: { fontSize: 18, fontWeight: 700, color: SC[k] || C.text } }, v),
+                    React.createElement("div", { className: "mono", style: { fontSize: 18, fontWeight: 700, color: SC[k.toLowerCase()] || C.text } }, v),
                     React.createElement("div", { style: { fontSize: 9, color: C.text3, textTransform: "uppercase", marginTop: 2 } }, k)
                   ))
                 )
