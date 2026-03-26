@@ -40,15 +40,22 @@ async def verify_carrier(mc_number: str) -> CarrierVerificationResponse:
                 return CarrierVerificationResponse(
                     mc_number=clean_mc,
                     is_eligible=False,
-                    reason="MC number not found in FMCSA database"
+                    reason="MC number not found in FMCSA database. This carrier may not have active authority."
                 )
             else:
-                # API might be down - fall back to mock for demo
-                return _mock_verification(clean_mc)
+                return CarrierVerificationResponse(
+                    mc_number=clean_mc,
+                    is_eligible=False,
+                    reason="Unable to verify carrier at this time. Please try again."
+                )
 
     except Exception as e:
-        print(f"FMCSA API error: {e} - using mock verification")
-        return _mock_verification(clean_mc)
+        print(f"FMCSA API error: {e}")
+        return CarrierVerificationResponse(
+            mc_number=clean_mc,
+            is_eligible=False,
+            reason="FMCSA verification service is temporarily unavailable."
+        )
 
 
 def _parse_fmcsa_response(mc_number: str, data: dict) -> CarrierVerificationResponse:

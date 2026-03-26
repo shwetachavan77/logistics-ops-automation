@@ -379,7 +379,16 @@
                 }
               },
               style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.cyan}30`, background: C.cyanDim, color: C.cyan, fontSize: 11, cursor: "pointer", fontWeight: 500 }
-            }, "+ Simulate 5 Calls")
+            }, "+ Simulate 5 Calls"),
+            React.createElement("button", {
+              onClick: async () => {
+                if (!confirm("Clear ALL call data and reset loads? This cannot be undone.")) return;
+                const r = await fetch("/api/reset", { method: "POST", headers: { "x-api-key": new URLSearchParams(window.location.search).get("key") || "carrier-sales-dev-key-2026" } }).catch(() => null);
+                if (r?.ok) { const d = await r.json(); alert(`Reset complete. ${d.calls_deleted} calls cleared. ${d.loads_reset} loads reset.`); load(); }
+                else alert("Reset failed.");
+              },
+              style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.red}30`, background: C.redDim, color: C.red, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+            }, "Reset")
           )
         ),
 

@@ -449,6 +449,27 @@ async def refresh_loads(request: Request):
         return {"status": "ok", "added": added, "total_loads": total, "unbooked": unbooked_new}
 
 
+@router.post("/reset")
+@limiter.limit("5/minute")
+async def reset_data(request: Request):
+    """Clear all call data and reset loads to available. For demo purposes."""
+    from app.db.database import Database
+
+    async with Database.pool.acquire() as conn:
+        calls_deleted = await conn.fetchval("SELECT COUNT(*) FROM calls")
+        await conn.execute("DELETE FROM calls")
+        await conn.execute("DELETE FROM negotiations")
+        await conn.execute("UPDATE loads SET is_available = TRUE")
+        loads_count = await conn.fetchval("SELECT COUNT(*) FROM loads")
+
+    return {
+        "status": "reset_complete",
+        "calls_deleted": calls_deleted,
+        "loads_reset": loads_count,
+        "message": "All call data cleared. Loads reset to available. Dashboard is now clean."
+    }
+
+
 @router.get("/health")
 async def health():
     return {"status": "healthy", "service": "carrier-sales-api"}
