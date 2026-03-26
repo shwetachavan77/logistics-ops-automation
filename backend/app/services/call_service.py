@@ -12,6 +12,18 @@ async def log_call(call: CallLog) -> CallLogResponse:
     Called by HappyRobot's webhook after Classify + Extract nodes run.
     """
     async with Database.pool.acquire() as conn:
+        # Auto-populate loadboard_rate from loads table if not provided
+        if not call.loadboard_rate and call.load_id:
+            lb = await conn.fetchval(
+                "SELECT loadboard_rate FROM loads WHERE load_id = $1", call.load_id
+            )
+            if lb:
+                call.loadboard_rate = float(lb)
+
+        # Auto-populate call_duration from HappyRobot call metadata if not provided
+        if not call.call_duration_seconds:
+            call.call_duration_seconds = None  # Will be updated if available
+
         await conn.execute("""
             INSERT INTO calls (
                 call_id, carrier_mc, carrier_name, load_id, outcome,
@@ -227,4 +239,14 @@ def _empty_metrics() -> DashboardMetrics:
         revenue_booked=0,
         calls_over_time=[],
         top_lanes=[],
+        round1_close_rate=0,
+        floor_rate_hit_rate=0,
+        avg_rate_given_up=0,
+        avg_call_duration=0,
+        repeat_carrier_rate=0,
+        load_fill_rate=0,
+        loads_available=0,
+        loads_booked=0,
+        avg_rate_per_mile="0.00",
+        rounds_breakdown={},
     )
