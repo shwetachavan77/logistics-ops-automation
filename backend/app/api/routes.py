@@ -275,6 +275,180 @@ async def get_all_loads(request: Request):
     return {"loads": [l.model_dump() for l in result.loads]}
 
 
+@router.post("/simulate")
+@limiter.limit("10/minute")
+async def simulate_calls(request: Request):
+    """Add 5 random call entries for demo purposes. Cap at 100 non-booked."""
+    import random
+    from datetime import datetime, timedelta
+    from app.db.database import Database
+
+    async with Database.pool.acquire() as conn:
+        # Count non-booked calls
+        count = await conn.fetchval(
+            "SELECT COUNT(*) FROM calls WHERE outcome != 'booked' OR outcome IS NULL"
+        )
+        if count >= 100:
+            return {"status": "cap_reached", "message": "Already at 100 non-booked calls", "total": count}
+
+        to_add = min(5, 100 - count)
+
+        carriers = [
+            ("Eagle Express Inc", "482910"),
+            ("Lone Star Freight", "391055"),
+            ("Thunder Road Trucking", "558432"),
+            ("Pacific Coast Logistics", "672190"),
+            ("Blue Line Carriers", "223847"),
+            ("Summit Freight LLC", "887654"),
+            ("Great Plains Transport", "445512"),
+            ("Liberty Logistics", "334521"),
+            ("Northwind Trucking", "776543"),
+            ("Iron Horse Freight", "999999"),
+            ("Redwood Transport", "112233"),
+            ("Cascade Haulers", "445566"),
+            ("Prairie Wind Logistics", "778899"),
+            ("Gulf Coast Carriers", "334455"),
+            ("Mountain Pass Freight", "667788"),
+        ]
+        outcomes = ["booked", "carrier_declined", "no_match", "negotiation_failed", "verification_failed"]
+        outcome_weights = [35, 25, 20, 12, 8]
+        sentiments = ["positive", "neutral", "negative", "aggressive"]
+        sentiment_weights = [40, 35, 18, 7]
+        load_ids = ["LD-1001", "LD-1002", "LD-1003", "LD-1004", "LD-1005",
+                     "LD-1006", "LD-1007", "LD-1008", "LD-1009", "LD-1010"]
+
+        added = 0
+        for _ in range(to_add):
+            carrier = random.choice(carriers)
+            outcome = random.choices(outcomes, weights=outcome_weights, k=1)[0]
+            sentiment = random.choices(sentiments, weights=sentiment_weights, k=1)[0]
+            load_id = random.choice(load_ids) if outcome != "verification_failed" else None
+            hours_ago = random.randint(1, 336)
+            ts = datetime.utcnow() - timedelta(hours=hours_ago)
+            call_id = f"SIM-{ts.strftime('%Y%m%d')}-{random.randint(100,999)}"
+            duration = random.randint(45, 420)
+            rounds = 0
+            agreed = None
+            initial = None
+            final = None
+            lb_rate = None
+
+            if outcome == "booked":
+                lb_rate = random.choice([650, 750, 850, 950, 1100, 1450, 1650, 1800, 2100, 2200, 2400, 2850])
+                rounds = random.randint(1, 3)
+                discount = random.uniform(0, 0.08)
+                agreed = round(lb_rate * (1 - discount))
+                initial = round(lb_rate * random.uniform(0.8, 0.95))
+                final = agreed
+            elif outcome in ("carrier_declined", "negotiation_failed"):
+                lb_rate = random.choice([650, 950, 1450, 1800, 2200, 2850])
+                rounds = random.randint(1, 3)
+                initial = round(lb_rate * random.uniform(0.7, 0.85))
+                final = round(lb_rate * random.uniform(0.75, 0.9))
+
+            try:
+                await conn.execute("""
+                    INSERT INTO calls (
+                        call_id, carrier_mc, carrier_name, load_id, outcome,
+                        sentiment, agreed_rate, negotiation_rounds, initial_offer,
+                        final_offer, loadboard_rate, call_duration_seconds, timestamp
+                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                    ON CONFLICT (call_id) DO NOTHING
+                """,
+                    call_id, carrier[1], carrier[0], load_id, outcome,
+                    sentiment, agreed, rounds, initial, final, lb_rate, duration, ts
+                )
+                added += 1
+            except Exception:
+                pass
+
+        new_count = await conn.fetchval("SELECT COUNT(*) FROM calls")
+        return {"status": "ok", "added": added, "total_calls": new_count}
+
+
+@router.post("/loads/refresh")
+@limiter.limit("10/minute")
+async def refresh_loads(request: Request):
+    """Add 5 new random loads. Cap unbooked loads at 100."""
+    import random
+    from datetime import datetime, timedelta
+    from app.db.database import Database
+
+    cities = [
+        "Chicago, IL", "Dallas, TX", "Los Angeles, CA", "Phoenix, AZ",
+        "Atlanta, GA", "Miami, FL", "Houston, TX", "Memphis, TN",
+        "Newark, NJ", "Boston, MA", "Seattle, WA", "Portland, OR",
+        "Denver, CO", "Nashville, TN", "Charlotte, NC", "Indianapolis, IN",
+        "Columbus, OH", "Kansas City, MO", "St. Louis, MO", "Detroit, MI",
+        "Philadelphia, PA", "Washington, DC", "Jacksonville, FL",
+        "Minneapolis, MN", "Tampa, FL", "San Antonio, TX", "Sacramento, CA",
+        "Cincinnati, OH", "Pittsburgh, PA", "Louisville, KY",
+    ]
+    equipment = ["Dry Van", "Reefer", "Flatbed", "Step Deck", "Box Truck"]
+    commodities = [
+        "Electronics", "Produce", "Furniture", "Steel Coils", "Consumer Goods",
+        "Seafood", "Auto Parts", "Machinery", "Paper Products", "Medical Supplies",
+        "Beverages", "Lumber", "Pharmaceuticals", "Office Supplies", "Textiles",
+        "Building Materials", "Frozen Foods", "Pet Supplies", "Industrial Equipment",
+    ]
+
+    async with Database.pool.acquire() as conn:
+        unbooked = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
+        if unbooked >= 100:
+            return {"status": "cap_reached", "message": "Already at 100 unbooked loads", "total_unbooked": unbooked}
+
+        to_add = min(5, 100 - unbooked)
+
+        max_id = await conn.fetchval("SELECT MAX(CAST(REPLACE(load_id, 'LD-', '') AS INTEGER)) FROM loads")
+        next_id = (max_id or 1015) + 1
+
+        added = 0
+        for i in range(to_add):
+            load_id = f"LD-{next_id + i}"
+            origin = random.choice(cities)
+            dest = random.choice([c for c in cities if c != origin])
+            equip = random.choice(equipment)
+            miles = random.randint(150, 1200)
+            rate = round(miles * random.uniform(2.0, 3.5), -1)
+            weight = random.randint(8000, 45000)
+            pieces = random.randint(1, 40)
+            commodity = random.choice(commodities)
+            pickup = datetime.utcnow() + timedelta(hours=random.randint(12, 96))
+            delivery = pickup + timedelta(hours=random.randint(8, 36))
+
+            notes_options = [
+                "No-touch freight, dock-to-dock",
+                "Appointment required",
+                "Driver assist required",
+                "Liftgate needed at delivery",
+                "Tarps required",
+                "Team drivers preferred",
+                None,
+            ]
+            notes = random.choice(notes_options)
+
+            try:
+                await conn.execute("""
+                    INSERT INTO loads (
+                        load_id, origin, destination, pickup_datetime, delivery_datetime,
+                        equipment_type, loadboard_rate, notes, weight, commodity_type,
+                        num_of_pieces, miles, dimensions
+                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                    ON CONFLICT (load_id) DO NOTHING
+                """,
+                    load_id, origin, dest, pickup, delivery,
+                    equip, rate, notes, weight, commodity,
+                    pieces, miles, "Standard pallets"
+                )
+                added += 1
+            except Exception:
+                pass
+
+        total = await conn.fetchval("SELECT COUNT(*) FROM loads")
+        unbooked_new = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
+        return {"status": "ok", "added": added, "total_loads": total, "unbooked": unbooked_new}
+
+
 @router.get("/health")
 async def health():
     return {"status": "healthy", "service": "carrier-sales-api"}

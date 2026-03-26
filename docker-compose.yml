@@ -30,18 +30,25 @@ services:
     environment:
       DATABASE_URL: postgresql://carrier_user:carrier_pass@db:5432/carrier_sales
       API_KEY: ${API_KEY:-carrier-sales-dev-key-2026}
+      FMCSA_API_KEY: ${FMCSA_API_KEY:-}
       DEMO_MODE: "true"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   frontend:
     build: ./frontend
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   pgdata:

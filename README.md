@@ -2,6 +2,8 @@
 
 An AI-powered voice agent that automates inbound carrier sales calls for freight brokerages. Built on the HappyRobot platform with a custom FastAPI backend.
 
+![Dashboard](dashboard-screenshot.png)
+
 ## Live Deployments
 
 | Service | URL |

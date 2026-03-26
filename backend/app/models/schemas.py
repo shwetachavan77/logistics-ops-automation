@@ -232,3 +232,8 @@ class DashboardMetrics(BaseModel):
     revenue_booked: float
     calls_over_time: List[dict]
     top_lanes: List[dict]
+    # Negotiation intelligence
+    round1_close_rate: float = 0
+    floor_rate_hit_rate: float = 0
+    avg_rate_given_up: float = 0
+    avg_call_duration: float = 0

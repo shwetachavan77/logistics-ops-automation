@@ -250,7 +250,29 @@
             React.createElement("button", {
               onClick: load,
               style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text2, fontSize: 11, cursor: "pointer", fontWeight: 500 }
-            }, "Refresh")
+            }, "Refresh"),
+            React.createElement("button", {
+              onClick: async () => {
+                try {
+                  const r = await fetch("/api/loads/refresh", { method: "POST", headers: { "x-api-key": new URLSearchParams(window.location.search).get("key") || "carrier-sales-dev-key-2026" } });
+                  const d = await r.json();
+                  if (d.status === "ok") { alert(`Added ${d.added} new loads. Total unbooked: ${d.unbooked}`); load(); }
+                  else alert(d.message || "Could not add loads");
+                } catch { alert("Failed to refresh loads"); }
+              },
+              style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.cyan}25`, background: C.cyanDim, color: C.cyan, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+            }, "+ Loads"),
+            React.createElement("button", {
+              onClick: async () => {
+                const r = await fetch("/api/simulate", { method: "POST" }).catch(() => null);
+                if (r?.ok) {
+                  const d = await r.json();
+                  if (d.status === "cap_reached") { alert("Dashboard is at capacity (100 calls)."); }
+                  else { load(); }
+                }
+              },
+              style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.cyan}30`, background: C.cyanDim, color: C.cyan, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+            }, "+ Simulate 5 Calls")
           )
         ),
 
@@ -421,12 +443,30 @@
                 React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "AI secured this percentage of the loadboard rate on average")
               ),
               React.createElement(Panel, { title: "Avg Call Duration" },
-                React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.cyan, textAlign: "center", padding: "20px 0" } }, avgCallDur),
-                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "From greeting to transfer for booked loads")
+                React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.cyan, textAlign: "center", padding: "20px 0" } }, m.avg_call_duration ? `${Math.floor(m.avg_call_duration / 60)}:${String(Math.round(m.avg_call_duration % 60)).padStart(2, "0")}` : avgCallDur),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "From greeting to resolution")
               ),
               React.createElement(Panel, { title: "Cost per Booking" },
                 React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.purple, textAlign: "center", padding: "20px 0" } }, "$0.77"),
                 React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "vs $15-25 per call with a human rep")
+              )
+            ),
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 } },
+              React.createElement(Panel, { title: "Round 1 Close Rate" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.green, textAlign: "center", padding: "14px 0" } }, `${m.round1_close_rate || 0}%`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Carriers accepting first offer")
+              ),
+              React.createElement(Panel, { title: "Floor Rate Hits" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: m.floor_rate_hit_rate > 20 ? C.amber : C.green, textAlign: "center", padding: "14px 0" } }, `${m.floor_rate_hit_rate || 0}%`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Deals closed at or near floor")
+              ),
+              React.createElement(Panel, { title: "Avg Rate Conceded" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.amber, textAlign: "center", padding: "14px 0" } }, `$${m.avg_rate_given_up || 0}`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Avg $ given up per booked deal")
+              ),
+              React.createElement(Panel, { title: "Avg Rounds to Close" },
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.cyan, textAlign: "center", padding: "14px 0" } }, `${m.avg_negotiation_rounds || 0}`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Negotiation rounds per deal")
               )
             ),
             React.createElement(Panel, { title: "AI vs Human Performance", subtitle: "Estimated comparison based on industry benchmarks" },

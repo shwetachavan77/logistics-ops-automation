@@ -129,6 +129,32 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             for row in lane_rows
         ]
 
+        # Negotiation intelligence
+        round1_closes = await conn.fetchval(
+            "SELECT COUNT(*) FROM calls WHERE outcome = 'booked' AND negotiation_rounds = 1"
+        )
+        total_booked = await conn.fetchval(
+            "SELECT COUNT(*) FROM calls WHERE outcome = 'booked'"
+        )
+        round1_close_rate = (round1_closes / total_booked * 100) if total_booked > 0 else 0
+
+        floor_hits = await conn.fetchval("""
+            SELECT COUNT(*) FROM calls
+            WHERE outcome = 'booked' AND agreed_rate IS NOT NULL AND loadboard_rate IS NOT NULL
+            AND agreed_rate <= loadboard_rate * 0.87
+        """)
+        floor_rate_hit_rate = (floor_hits / total_booked * 100) if total_booked > 0 else 0
+
+        avg_rate_given_up = await conn.fetchval("""
+            SELECT COALESCE(AVG(loadboard_rate - agreed_rate), 0)
+            FROM calls
+            WHERE outcome = 'booked' AND agreed_rate IS NOT NULL AND loadboard_rate IS NOT NULL
+        """)
+
+        avg_duration = await conn.fetchval(
+            "SELECT COALESCE(AVG(call_duration_seconds), 0) FROM calls WHERE call_duration_seconds > 0"
+        )
+
         return DashboardMetrics(
             total_calls=total,
             calls_by_outcome=calls_by_outcome,
@@ -139,6 +165,10 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             revenue_booked=float(revenue),
             calls_over_time=calls_over_time,
             top_lanes=top_lanes,
+            round1_close_rate=round(round1_close_rate, 1),
+            floor_rate_hit_rate=round(floor_rate_hit_rate, 1),
+            avg_rate_given_up=round(float(avg_rate_given_up)),
+            avg_call_duration=round(float(avg_duration)),
         )
 
 
