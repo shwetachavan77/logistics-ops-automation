@@ -154,6 +154,18 @@ async def missed_opportunity(request: Request, alert: MissedOpportunityAlert):
     final = clean_float(alert.final_offer)
     rate = clean_float(alert.loadboard_rate)
     gap = abs(final - rate) if final and rate else None
+    gap_pct = (gap / rate * 100) if gap and rate else None
+
+    # Only flag as near-miss if carrier's ask was within 15% of loadboard rate
+    if gap_pct and gap_pct <= 15:
+        message = f"Near-miss deal. Carrier asked ${final:,.2f}, our max was ${rate:,.2f}. Gap: ${gap:,.2f} ({gap_pct:.1f}%). Worth a manual follow-up."
+        status = "near_miss"
+    elif gap_pct and gap_pct > 15:
+        message = f"Negotiation failed. Carrier asked ${final:,.2f}, our max was ${rate:,.2f}. Gap: ${gap:,.2f} ({gap_pct:.1f}%). Too far apart."
+        status = "too_far"
+    else:
+        message = "Negotiation failed. No rate data available."
+        status = "no_data"
 
     record = {
         "call_id": alert.call_id,
@@ -163,11 +175,11 @@ async def missed_opportunity(request: Request, alert: MissedOpportunityAlert):
         "final_offer": final,
         "loadboard_rate": rate,
         "gap": gap,
-        "message": f"Near-miss deal. Carrier offered ${final:,.2f}, cap was ${rate:,.2f}. Gap: ${gap:,.2f}. Consider manual follow-up." if final and rate and gap else "Near-miss deal. Consider manual follow-up.",
-        "status": "alert_logged"
+        "gap_pct": gap_pct,
+        "message": message,
+        "status": status
     }
 
-    # Store as a call log with notes
     try:
         from app.db.database import Database
         async with Database.pool.acquire() as conn:
@@ -176,7 +188,7 @@ async def missed_opportunity(request: Request, alert: MissedOpportunityAlert):
                 VALUES ($1, $2, $3, $4, 'negotiation_failed', $5, NOW())
                 ON CONFLICT (call_id) DO UPDATE SET notes = EXCLUDED.notes
             """, alert.call_id + "_alert", clean_str(alert.carrier_mc),
-                clean_str(alert.carrier_name), clean_str(alert.load_id), record["message"])
+                clean_str(alert.carrier_name), clean_str(alert.load_id), message)
     except Exception as e:
         print(f"Failed to store alert: {e}")
 
