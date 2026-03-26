@@ -302,10 +302,8 @@ async def reset_data(request: Request):
         calls_deleted = await conn.fetchval("SELECT COUNT(*) FROM calls")
         await conn.execute("DELETE FROM calls")
         await conn.execute("DELETE FROM negotiations")
-        loads_reset = await conn.fetchval("UPDATE loads SET is_available = TRUE RETURNING COUNT(*)")
-        if loads_reset is None:
-            loads_reset = await conn.fetchval("SELECT COUNT(*) FROM loads")
-            await conn.execute("UPDATE loads SET is_available = TRUE")
+        await conn.execute("UPDATE loads SET is_available = TRUE")
+        loads_reset = await conn.fetchval("SELECT COUNT(*) FROM loads")
     return {"status": "ok", "calls_deleted": calls_deleted or 0, "loads_reset": loads_reset or 0}
 
 
