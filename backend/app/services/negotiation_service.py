@@ -8,6 +8,7 @@ from app.db.database import Database
 ROUND_1_CAP = 1.00    # only accept at or below listed rate
 ROUND_2_CAP = 1.05    # willing to go 5% above
 ROUND_3_CAP = 1.10    # max 10% above, final offer
+QUOTE_DISCOUNT = 0.80  # agent quotes 20% below, counters start here
 
 
 async def evaluate_offer(request: NegotiationRequest) -> NegotiationResponse:
@@ -30,47 +31,47 @@ async def evaluate_offer(request: NegotiationRequest) -> NegotiationResponse:
         if offer <= rate * ROUND_1_CAP:
             return _accept(offer, round_num, rate)
         else:
-            counter = round(rate)
+            counter = round(rate * QUOTE_DISCOUNT, 2)
             return NegotiationResponse(
                 accepted=False,
                 counter_offer=counter,
                 message=(
-                    f"I appreciate the offer of ${round(offer):,.0f}, but this load is posted "
-                    f"at ${counter:,.0f}. That's ${rate / load.miles:.2f} per mile for "
-                    f"{load.miles:.0f} miles. Can you work with ${counter:,.0f}?"
+                    f"I appreciate the offer of ${offer:,.2f}, but the best I can do "
+                    f"right now is ${counter:,.2f}. That's ${counter / load.miles:.2f} per mile for "
+                    f"{load.miles:.0f} miles. Can you work with that?"
                 ),
                 round_number=1,
                 final_round=False
             )
 
     elif round_num == 2:
-        cap = round(rate * ROUND_2_CAP)
+        cap = rate * ROUND_2_CAP
         if offer <= cap:
             return _accept(offer, round_num, rate)
         else:
+            counter = round(rate * 0.95, 2)
             return NegotiationResponse(
                 accepted=False,
-                counter_offer=cap,
+                counter_offer=counter,
                 message=(
-                    f"I understand. The best I can do is ${cap:,.0f}. "
-                    f"That's a bit above our listed rate. Does that work for you?"
+                    f"I hear you. Let me see what I can do. "
+                    f"How about ${counter:,.2f}? That's the best I can stretch to."
                 ),
                 round_number=2,
                 final_round=False
             )
 
     elif round_num >= 3:
-        cap = round(rate * ROUND_3_CAP)
+        cap = rate * ROUND_3_CAP
         if offer <= cap:
             return _accept(offer, round_num, rate)
         else:
             return NegotiationResponse(
                 accepted=False,
-                counter_offer=None,
+                counter_offer=round(rate, 2),
                 message=(
-                    f"I'm sorry, ${round(offer):,.0f} is above what we can do for this lane. "
-                    f"My absolute max is ${cap:,.0f}. "
-                    f"Would you like me to check if we have other loads available?"
+                    f"I really can't go higher than ${rate:,.2f} on this one. "
+                    f"That's my absolute best. Want to go with that, or should I check other loads?"
                 ),
                 round_number=3,
                 final_round=True
@@ -88,13 +89,13 @@ def _accept(offer: float, round_number: int, loadboard_rate: float) -> Negotiati
     return NegotiationResponse(
         accepted=True,
         message=(
-            f"Great, ${round(offer):,.0f} works for us! Let me transfer you to a "
+            f"Great, ${offer:,.2f} works for us! Let me transfer you to a "
             f"sales representative to finalize the booking and get your "
             f"rate confirmation sent over."
         ),
         round_number=round_number,
         final_round=True,
-        agreed_rate=round(offer)
+        agreed_rate=offer
     )
 
 
