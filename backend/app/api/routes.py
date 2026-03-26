@@ -291,3 +291,35 @@ async def dashboard_login(request: Request):
     if pw == DASHBOARD_PASSWORD:
         return {"status": "ok", "api_key": API_KEY}
     raise HTTPException(status_code=403, detail="Invalid password")
+
+
+@router.post("/reset")
+@limiter.limit("5/minute")
+async def reset_data(request: Request):
+    """Clear all call history and reset loads to available."""
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        calls_deleted = await conn.fetchval("SELECT COUNT(*) FROM calls")
+        await conn.execute("DELETE FROM calls")
+        await conn.execute("DELETE FROM negotiations")
+        loads_reset = await conn.fetchval("UPDATE loads SET is_available = TRUE RETURNING COUNT(*)")
+        if loads_reset is None:
+            loads_reset = await conn.fetchval("SELECT COUNT(*) FROM loads")
+            await conn.execute("UPDATE loads SET is_available = TRUE")
+    return {"status": "ok", "calls_deleted": calls_deleted or 0, "loads_reset": loads_reset or 0}
+
+
+@router.post("/loads/refresh")
+@limiter.limit("10/minute")
+async def refresh_loads(request: Request):
+    """Re-seed loads if running low."""
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        available = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
+        total = await conn.fetchval("SELECT COUNT(*) FROM loads")
+        if available >= 10:
+            return {"status": "ok", "message": f"Already have {available} loads available", "added": 0, "unbooked": available}
+        # Reset booked loads back to available
+        await conn.execute("UPDATE loads SET is_available = TRUE")
+        unbooked = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
+    return {"status": "ok", "added": unbooked - available, "unbooked": unbooked}

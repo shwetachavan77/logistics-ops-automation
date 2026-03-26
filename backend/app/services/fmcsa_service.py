@@ -1,60 +1,63 @@
-"""FMCSA carrier verification via SAFER system."""
+"""FMCSA carrier verification via SAFER system. Real API only — no mocks."""
 
 import os
 import httpx
-from typing import Optional
 from app.models.schemas import CarrierVerificationResponse
 
 
-# FMCSA's public API (no key needed for basic queries)
 FMCSA_API_BASE = "https://mobile.fmcsa.dot.gov/qc/services"
+FMCSA_API_KEY = os.getenv(
+    "FMCSA_API_KEY",
+    "cdc33e44d693a3a58451898d4ec9df862c65b954"
+)
 
 
 async def verify_carrier(mc_number: str) -> CarrierVerificationResponse:
     """
     Verify a carrier's authority via FMCSA SAFER system.
-
-    Args:
-        mc_number: The carrier's MC (Motor Carrier) number.
-                   Carriers typically say "MC 123456" on calls.
-
-    Returns:
-        CarrierVerificationResponse with eligibility decision.
+    Real API only — returns an ineligible response on any API failure
+    rather than falling back to mock data.
     """
-    # Clean the input - carriers might say "MC-123456" or "MC 123456"
     clean_mc = mc_number.strip().upper().replace("MC", "").replace("-", "").replace(" ", "")
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            # FMCSA provides carrier info by docket number (MC number)
             response = await client.get(
                 f"{FMCSA_API_BASE}/carriers/docket-number/{clean_mc}",
-                params={"webKey": os.getenv("FMCSA_API_KEY", "")},
+                params={"webKey": FMCSA_API_KEY},
                 headers={"Accept": "application/json"}
             )
 
             if response.status_code == 200:
                 data = response.json()
                 return _parse_fmcsa_response(clean_mc, data)
-            elif response.status_code == 404:
+
+            if response.status_code == 404:
                 return CarrierVerificationResponse(
                     mc_number=clean_mc,
                     is_eligible=False,
-                    reason="MC number not found in FMCSA database. This carrier may not have active authority."
-                )
-            else:
-                return CarrierVerificationResponse(
-                    mc_number=clean_mc,
-                    is_eligible=False,
-                    reason="Unable to verify carrier at this time. Please try again."
+                    reason="MC number not found in FMCSA database"
                 )
 
+            # Any other status code — treat as lookup failure
+            return CarrierVerificationResponse(
+                mc_number=clean_mc,
+                is_eligible=False,
+                reason=f"FMCSA lookup returned status {response.status_code}. Please try again."
+            )
+
+    except httpx.TimeoutException:
+        return CarrierVerificationResponse(
+            mc_number=clean_mc,
+            is_eligible=False,
+            reason="FMCSA verification timed out. Please try again in a moment."
+        )
     except Exception as e:
         print(f"FMCSA API error: {e}")
         return CarrierVerificationResponse(
             mc_number=clean_mc,
             is_eligible=False,
-            reason="FMCSA verification service is temporarily unavailable."
+            reason="Unable to reach FMCSA for verification. Please try again."
         )
 
 
@@ -64,13 +67,19 @@ def _parse_fmcsa_response(mc_number: str, data: dict) -> CarrierVerificationResp
         content = data.get("content", [{}])
         carrier = content[0].get("carrier", {}) if content else {}
 
+        if not carrier:
+            return CarrierVerificationResponse(
+                mc_number=mc_number,
+                is_eligible=False,
+                reason="No carrier data returned from FMCSA"
+            )
+
         carrier_name = carrier.get("legalName", "Unknown")
         dot_number = str(carrier.get("dotNumber", ""))
         status = carrier.get("allowedToOperate", "N")
         safety_rating = carrier.get("safetyRating", "None")
 
-        # A carrier is eligible if they're authorized to operate
-        is_authorized = status.upper() in ["Y", "YES", "AUTHORIZED"]
+        is_authorized = str(status).upper() in ("Y", "YES", "AUTHORIZED")
 
         return CarrierVerificationResponse(
             mc_number=mc_number,
@@ -78,42 +87,14 @@ def _parse_fmcsa_response(mc_number: str, data: dict) -> CarrierVerificationResp
             carrier_name=carrier_name,
             dot_number=dot_number,
             status="AUTHORIZED" if is_authorized else "NOT AUTHORIZED",
-            safety_rating=safety_rating if safety_rating else None,
-            insurance_on_file=is_authorized,  # Simplified - real check is more complex
+            safety_rating=safety_rating if safety_rating and safety_rating != "None" else None,
+            insurance_on_file=is_authorized,
             reason=None if is_authorized else "Carrier is not authorized to operate"
         )
-    except (KeyError, IndexError):
-        return _mock_verification(mc_number)
-
-
-def _mock_verification(mc_number: str) -> CarrierVerificationResponse:
-    """
-    Mock verification for demo purposes.
-
-    Logic: MC numbers ending in odd digits = eligible.
-    This lets us demo both pass and fail scenarios predictably.
-    Real implementation always hits FMCSA first.
-    """
-    # For demo: even last digits = eligible, odd = not eligible
-    # Special case: MC 123456 is always eligible (common test number)
-    is_eligible = True
-    reason = None
-
-    if mc_number in ("999999", "000000"):
-        is_eligible = False
-        reason = "Carrier authority has been revoked"
-    elif mc_number.isdigit() and int(mc_number) % 2 == 1:
-        # Odd MC numbers fail in demo mode
-        is_eligible = False
-        reason = "Carrier insurance has lapsed"
-
-    return CarrierVerificationResponse(
-        mc_number=mc_number,
-        is_eligible=is_eligible,
-        carrier_name=f"Demo Carrier {mc_number}" if is_eligible else None,
-        dot_number=f"DOT{mc_number}",
-        status="AUTHORIZED" if is_eligible else "NOT AUTHORIZED",
-        safety_rating="Satisfactory" if is_eligible else None,
-        insurance_on_file=is_eligible,
-        reason=reason
-    )
+    except (KeyError, IndexError) as e:
+        print(f"FMCSA parse error: {e}")
+        return CarrierVerificationResponse(
+            mc_number=mc_number,
+            is_eligible=False,
+            reason="Could not parse FMCSA response. Please try again."
+        )

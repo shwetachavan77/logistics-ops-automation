@@ -9,11 +9,12 @@ from app.db.database import Database
 from app.models.schemas import CallOutcome, Sentiment
 
 OUTCOME_WEIGHTS = {
-    CallOutcome.BOOKED: 35,
-    CallOutcome.CARRIER_DECLINED: 25,
-    CallOutcome.NO_MATCH: 20,
-    CallOutcome.NEGOTIATION_FAILED: 12,
+    CallOutcome.BOOKED: 32,
+    CallOutcome.CARRIER_DECLINED: 22,
+    CallOutcome.NO_MATCH: 18,
+    CallOutcome.NEGOTIATION_FAILED: 10,
     CallOutcome.VERIFICATION_FAILED: 8,
+    CallOutcome.GENERAL_INQUIRY: 10,
 }
 
 SENTIMENT_WEIGHTS = {

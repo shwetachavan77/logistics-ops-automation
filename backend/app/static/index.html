@@ -273,7 +273,7 @@
       useEffect(() => {
         const poll = setInterval(async () => {
           try {
-            const r = await fetch("/api/calls/recent?limit=1");
+            const r = await fetch("/api/calls/recent?limit=1", { headers: { "x-api-key": sessionStorage.getItem("dash_key") || "" } });
             if (r?.ok) {
               const d = await r.json();
               const recent = d.calls?.[0];
@@ -290,7 +290,7 @@
       const load = useCallback(async () => {
         if (demo) { setM(mockData()); setLoading(false); return; }
         try {
-          const apiKey = new URLSearchParams(window.location.search).get("key") || "";
+          const apiKey = getKey();
           const headers = apiKey ? { "x-api-key": apiKey } : {};
           const [mr, cr] = await Promise.all([
             fetch("/api/metrics", { headers }).catch(() => null),
@@ -316,7 +316,8 @@
         const urlKey = new URLSearchParams(window.location.search).get("key");
         if (urlKey && !authed) {
           fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: urlKey }) })
-            .then(r => { if (r.ok) { sessionStorage.setItem("dash_auth", "1"); setAuthed(true); } })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d) { sessionStorage.setItem("dash_auth", "1"); sessionStorage.setItem("dash_key", d.api_key || ""); setAuthed(true); } })
             .catch(() => {});
         }
       }, []);
@@ -325,7 +326,7 @@
         setAuthLoading(true); setAuthError("");
         try {
           const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
-          if (r.ok) { sessionStorage.setItem("dash_auth", "1"); setAuthed(true); }
+          if (r.ok) { const d = await r.json(); sessionStorage.setItem("dash_auth", "1"); sessionStorage.setItem("dash_key", d.api_key || ""); setAuthed(true); }
           else { setAuthError("Invalid access key"); }
         } catch { setAuthError("Cannot reach server"); }
         setAuthLoading(false);
