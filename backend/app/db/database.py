@@ -114,6 +114,14 @@ class Database:
                 ON calls (timestamp);
             """)
 
+            # Add columns that may be missing from older table versions
+            for col, coltype in [("notes", "TEXT"), ("sms_text", "TEXT")]:
+                try:
+                    await conn.execute(f"ALTER TABLE calls ADD COLUMN {col} {coltype}")
+                    print(f"Added column calls.{col}")
+                except Exception:
+                    pass  # Column already exists
+
     @classmethod
     async def seed_loads(cls):
         """

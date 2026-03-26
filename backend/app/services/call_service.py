@@ -17,22 +17,20 @@ async def log_call(call: CallLog) -> CallLogResponse:
                 call_id, carrier_mc, carrier_name, load_id, outcome,
                 sentiment, agreed_rate, negotiation_rounds, initial_offer,
                 final_offer, loadboard_rate, call_duration_seconds,
-                transcript, notes, sms_text, timestamp
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+                transcript, timestamp
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
             ON CONFLICT (call_id) DO UPDATE SET
                 outcome = EXCLUDED.outcome,
                 sentiment = EXCLUDED.sentiment,
                 agreed_rate = EXCLUDED.agreed_rate,
                 negotiation_rounds = EXCLUDED.negotiation_rounds,
-                transcript = EXCLUDED.transcript,
-                sms_text = EXCLUDED.sms_text
+                transcript = EXCLUDED.transcript
         """,
             call.call_id, call.carrier_mc, call.carrier_name,
             call.load_id, str(call.outcome), str(call.sentiment),
             call.agreed_rate, call.negotiation_rounds,
             call.initial_offer, call.final_offer, call.loadboard_rate,
-            call.call_duration_seconds, call.transcript,
-            call.notes, call.sms_text, call.timestamp
+            call.call_duration_seconds, call.transcript, call.timestamp
         )
 
         # If the load was booked, mark it unavailable

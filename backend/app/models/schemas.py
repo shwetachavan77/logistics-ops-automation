@@ -118,7 +118,7 @@ class NegotiationResponse(BaseModel):
 # Call logging
 
 class CallLog(BaseModel):
-    call_id: str
+    call_id: Optional[str] = Field(default=None, description="Auto-generated if not provided")
     carrier_mc: Optional[Union[str, int, float]] = None
     carrier_name: Optional[str] = None
     load_id: Optional[str] = None
@@ -129,7 +129,8 @@ class CallLog(BaseModel):
     initial_offer: Optional[Union[str, int, float]] = None
     final_offer: Optional[Union[str, int, float]] = None
     loadboard_rate: Optional[Union[str, int, float]] = None
-    call_duration_seconds: Optional[int] = None
+    call_duration_seconds: Optional[Union[str, int]] = None
+    call_duration: Optional[Union[str, int]] = None
     transcript: Optional[str] = None
     notes: Optional[str] = None
     sms_text: Optional[str] = None
