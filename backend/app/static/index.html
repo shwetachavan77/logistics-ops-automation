@@ -1,473 +1,455 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2487.5">
-  <style type="text/css">
-    body {background-color: #07090c}
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; color: #e0e8f0; -webkit-text-stroke: #e0e8f0}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; color: #e0e8f0; -webkit-text-stroke: #e0e8f0; min-height: 14.0px}
-    span.s1 {font-kerning: none}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carrier Sales Command Center</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #06080D; --surface: #0D1117; --surface2: #151B25;
+      --border: #1C2333; --border2: #2A3345;
+      --text: #E6EDF3; --text2: #8B949E; --text3: #484F58;
+      --cyan: #58A6FF; --cyan-dim: #1A3A5C;
+      --green: #3FB950; --green-dim: #1A3D2B;
+      --amber: #D29922; --amber-dim: #3D2E10;
+      --red: #F85149; --red-dim: #3D1518;
+      --purple: #BC8CFF; --purple-dim: #2A1A4A;
+      --blue: #58A6FF;
+    }
+    body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); min-height: 100vh; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
   </style>
 </head>
 <body>
-<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
-<p class="p1"><span class="s1">&lt;html lang="en"&gt;</span></p>
-<p class="p1"><span class="s1">&lt;head&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8" /&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;title&gt;Carrier Sales Command Center&lt;/title&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet" /&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;style&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>:root {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--bg: #06080D; --surface: #0D1117; --surface2: #151B25;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--border: #1C2333; --border2: #2A3345;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--text: #E6EDF3; --text2: #8B949E; --text3: #484F58;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--cyan: #58A6FF; --cyan-dim: #1A3A5C;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--green: #3FB950; --green-dim: #1A3D2B;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--amber: #D29922; --amber-dim: #3D2E10;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--red: #F85149; --red-dim: #3D1518;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--purple: #BC8CFF; --purple-dim: #2A1A4A;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>--blue: #58A6FF;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); min-height: 100vh; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.mono { font-family: 'JetBrains Mono', monospace; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.fade-in { animation: fadeIn 0.4s ease forwards; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
-<p class="p1"><span class="s1">&lt;body&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div id="root"&gt;&lt;/div&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"&gt;&lt;/script&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;script type="text/babel"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const { useState, useEffect, useCallback, useMemo } = React;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>Tooltip, ResponsiveContainer, AreaChart, Area, Legend</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>} = Recharts;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const C = {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>bg: "#06080D", surface: "#0D1117", surface2: "#151B25",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>border: "#1C2333", border2: "#2A3345",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>text: "#E6EDF3", text2: "#8B949E", text3: "#484F58",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>cyan: "#58A6FF", cyanDim: "#1A3A5C",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>green: "#3FB950", greenDim: "#1A3D2B",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>amber: "#D29922", amberDim: "#3D2E10",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>red: "#F85149", redDim: "#3D1518",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>purple: "#BC8CFF", purpleDim: "#2A1A4A",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>blue: "#58A6FF",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>};</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const OC = { booked: C.green, carrier_declined: C.amber, no_match: C.text3, negotiation_failed: C.red, verification_failed: C.purple };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const OL = { booked: "Booked", carrier_declined: "Declined", no_match: "No Match", negotiation_failed: "Neg. Failed", verification_failed: "MC Failed" };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const SC = { positive: C.green, neutral: C.blue, negative: C.amber, aggressive: C.red };</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function mockData() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const outcomes = { booked: 18, carrier_declined: 12, no_match: 10, negotiation_failed: 6, verification_failed: 4 };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const sentiments = { positive: 20, neutral: 17, negative: 10, aggressive: 3 };</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const days = [];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const now = new Date();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>for (let i = 13; i &gt;= 0; i--) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const d = new Date(now); d.setDate(d.getDate() - i);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const calls = Math.floor(Math.random() * 5) + 2;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>days.push({ date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }), calls, booked: Math.min(Math.floor(Math.random() * 3) + 1, calls) });</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>total_calls: 50, calls_by_outcome: outcomes, calls_by_sentiment: sentiments,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>booking_rate: 36.0, avg_negotiation_rounds: 1.8, avg_discount_from_loadboard: 4.2,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>revenue_booked: 48230, calls_over_time: days,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>top_lanes: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ origin: "Chicago, IL", destination: "Dallas, TX", calls: 8, bookings: 4 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ origin: "Los Angeles, CA", destination: "Phoenix, AZ", calls: 6, bookings: 3 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ origin: "Atlanta, GA", destination: "Miami, FL", calls: 5, bookings: 2 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ origin: "Houston, TX", destination: "Memphis, TN", calls: 4, bookings: 2 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ origin: "Newark, NJ", destination: "Boston, MA", calls: 3, bookings: 1 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>recent_calls: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260322-001", carrier_name: "Eagle Express Inc", carrier_mc: "482910", outcome: "booked", sentiment: "positive", agreed_rate: 2710, loadboard_rate: 2850, negotiation_rounds: 2, call_duration_seconds: 285, timestamp: "2026-03-22T14:32:00", load_id: "LD-1001" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260322-002", carrier_name: "Lone Star Freight", carrier_mc: "391055", outcome: "carrier_declined", sentiment: "neutral", agreed_rate: null, loadboard_rate: 1450, negotiation_rounds: 1, call_duration_seconds: 142, timestamp: "2026-03-22T13:15:00", load_id: "LD-1002" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260322-003", carrier_name: "Thunder Road Trucking", carrier_mc: "558432", outcome: "booked", sentiment: "positive", agreed_rate: 1750, loadboard_rate: 1800, negotiation_rounds: 1, call_duration_seconds: 195, timestamp: "2026-03-22T11:48:00", load_id: "LD-1003" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260322-004", carrier_name: "Pacific Coast Logistics", carrier_mc: "672190", outcome: "no_match", sentiment: "neutral", agreed_rate: null, loadboard_rate: null, negotiation_rounds: 0, call_duration_seconds: 88, timestamp: "2026-03-22T10:22:00", load_id: null },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260322-005", carrier_name: "Iron Horse Freight", carrier_mc: "999999", outcome: "verification_failed", sentiment: "negative", agreed_rate: null, loadboard_rate: null, negotiation_rounds: 0, call_duration_seconds: 62, timestamp: "2026-03-22T09:05:00", load_id: null },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260321-001", carrier_name: "Blue Line Carriers", carrier_mc: "223847", outcome: "negotiation_failed", sentiment: "negative", agreed_rate: null, loadboard_rate: 2200, negotiation_rounds: 3, call_duration_seconds: 340, timestamp: "2026-03-21T16:40:00", load_id: "LD-1004" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260321-002", carrier_name: "Summit Freight LLC", carrier_mc: "887654", outcome: "booked", sentiment: "positive", agreed_rate: 920, loadboard_rate: 950, negotiation_rounds: 1, call_duration_seconds: 155, timestamp: "2026-03-21T15:10:00", load_id: "LD-1005" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260321-003", carrier_name: "Great Plains Transport", carrier_mc: "445512", outcome: "carrier_declined", sentiment: "aggressive", agreed_rate: null, loadboard_rate: 2100, negotiation_rounds: 2, call_duration_seconds: 210, timestamp: "2026-03-21T14:00:00", load_id: "LD-1007" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260320-001", carrier_name: "Liberty Logistics", carrier_mc: "334521", outcome: "booked", sentiment: "positive", agreed_rate: 2350, loadboard_rate: 2400, negotiation_rounds: 2, call_duration_seconds: 270, timestamp: "2026-03-20T11:20:00", load_id: "LD-1011" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>{ call_id: "CALL-20260320-002", carrier_name: "Northwind Trucking", carrier_mc: "776543", outcome: "no_match", sentiment: "neutral", agreed_rate: null, loadboard_rate: null, negotiation_rounds: 0, call_duration_seconds: 95, timestamp: "2026-03-20T09:45:00", load_id: null },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>};</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Components</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function Badge({ label, color }) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return React.createElement("span", {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>style: { display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color, background: color + "15", border: `1px solid ${color}25` }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}, label);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function ChartTip({ active, payload, label }) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (!active || !payload?.length) return null;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return React.createElement("div", {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>style: { background: C.surface2, border: `1px solid ${C.border2}`, borderRadius: 6, padding: "8px 12px", boxShadow: "0 4px 16px rgba(0,0,0,0.5)" }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { color: C.text2, fontSize: 10, marginBottom: 4 } }, label),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>...payload.map((p, i) =&gt; React.createElement("div", { key: i, style: { color: p.color || C.text, fontSize: 12, fontWeight: 600 } }, `${p.name}: ${p.value}`))</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function KpiCard({ label, value, sub, color, trend }) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return React.createElement("div", {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>className: "fade-in",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "18px 20px", position: "relative", overflow: "hidden", transition: "border-color 0.2s", cursor: "default" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>onMouseEnter: e =&gt; e.currentTarget.style.borderColor = color || C.border2,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>onMouseLeave: e =&gt; e.currentTarget.style.borderColor = C.border,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: color || C.cyan, borderRadius: "10px 0 0 10px" } }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { color: C.text2, fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 } }, label),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { display: "flex", alignItems: "baseline", gap: 8 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("span", { className: "mono", style: { color: C.text, fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em" } }, value),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>trend &amp;&amp; React.createElement("span", { style: { color: trend &gt; 0 ? C.green : C.red, fontSize: 11, fontWeight: 600 } }, trend &gt; 0 ? `+${trend}%` : `${trend}%`)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>sub &amp;&amp; React.createElement("div", { style: { color: C.text3, fontSize: 11, marginTop: 4 } }, sub)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function Panel({ title, subtitle, children, style }) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return React.createElement("div", {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>className: "fade-in",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden", ...style }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { padding: "14px 20px", borderBottom: `1px solid ${C.border}` } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: C.text } }, title),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>subtitle &amp;&amp; React.createElement("div", { style: { fontSize: 11, color: C.text3, marginTop: 2 } }, subtitle)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { padding: 20 } }, children)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Call detail drawer</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function CallDrawer({ call, onClose }) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (!call) return null;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const time = new Date(call.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const dur = call.call_duration_seconds ? `${Math.floor(call.call_duration_seconds / 60)}:${String(call.call_duration_seconds % 60).padStart(2, "0")}` : "N/A";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const savings = call.agreed_rate &amp;&amp; call.loadboard_rate ? ((1 - call.agreed_rate / call.loadboard_rate) * 100).toFixed(1) : null;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const row = (label, value, color) =&gt; React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("span", { style: { color: C.text2, fontSize: 12 } }, label),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("span", { className: "mono", style: { color: color || C.text, fontSize: 12, fontWeight: 500 } }, value)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>);</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return React.createElement("div", {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>style: { position: "fixed", top: 0, right: 0, bottom: 0, width: 420, background: C.surface, borderLeft: `1px solid ${C.border}`, zIndex: 100, overflowY: "auto", boxShadow: "-8px 0 32px rgba(0,0,0,0.5)" }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("div", { style: { fontSize: 14, fontWeight: 600 } }, "Call Details"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("button", { onClick: onClose, style: { background: "none", border: "none", color: C.text2, fontSize: 18, cursor: "pointer", padding: "4px 8px" } }, "x")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { padding: 20 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("div", { style: { fontSize: 16, fontWeight: 600, marginBottom: 4 } }, call.carrier_name || "Unknown Carrier"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("div", { className: "mono", style: { fontSize: 11, color: C.text3, marginBottom: 16 } }, `MC-${call.carrier_mc} | ${call.call_id}`),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement(Badge, { label: OL[call.outcome] || call.outcome, color: OC[call.outcome] || C.text3 }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement(Badge, { label: call.sentiment, color: SC[call.sentiment] || C.text3 })</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>row("Time", time),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>row("Duration", dur),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>row("Load", call.load_id || "No load discussed"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>row("Loadboard Rate", call.loadboard_rate ? `$${call.loadboard_rate.toLocaleString()}` : "N/A"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>row("Agreed Rate", call.agreed_rate ? `$${call.agreed_rate.toLocaleString()}` : "No deal", call.agreed_rate ? C.green : C.text3),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>row("Negotiation Rounds", `${call.negotiation_rounds || 0} / 3`),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>savings &amp;&amp; row("Rate Preservation", `${(100 - parseFloat(savings)).toFixed(1)}%`, parseFloat(savings) &lt; 10 ? C.green : C.amber),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Main app</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>function App() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const [m, setM] = useState(null);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const [tab, setTab] = useState("overview");</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const [selectedCall, setSelectedCall] = useState(null);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const [loading, setLoading] = useState(true);</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const load = useCallback(async () =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>try {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>const apiKey = new URLSearchParams(window.location.search).get("key") || "";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>const headers = apiKey ? { "x-api-key": apiKey } : {};</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>const [mr, cr] = await Promise.all([</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>fetch("/api/metrics", { headers }).catch(() =&gt; null),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>fetch("/api/calls/recent?limit=30", { headers }).catch(() =&gt; null),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>]);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (mr?.ok &amp;&amp; cr?.ok) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const md = await mr.json(); const cd = await cr.json();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>setM({ ...md, recent_calls: cd.calls || [] });</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>} else setM(mockData());</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} catch { setM(mockData()); }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>setLoading(false);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}, []);</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>useEffect(() =&gt; { load(); }, [load]);</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (loading) return React.createElement("div", { style: { background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 12 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("div", { style: { width: 32, height: 32, border: `3px solid ${C.border}`, borderTopColor: C.cyan, borderRadius: "50%", animation: "spin 0.8s linear infinite" } }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("span", { style: { color: C.text2, fontSize: 13 } }, "Loading metrics..."),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("style", {}, "@keyframes spin { to { transform: rotate(360deg); } }")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>);</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (!m) return null;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const oData = Object.entries(m.calls_by_outcome).map(([k, v]) =&gt; ({ name: OL[k] || k, value: v, color: OC[k] || C.text3 }));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const sData = Object.entries(m.calls_by_sentiment).map(([k, v]) =&gt; ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v, color: SC[k] || C.text3 }));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const nData = [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>{ rounds: "0", count: (m.calls_by_outcome.no_match || 0) + (m.calls_by_outcome.verification_failed || 0), color: C.text3 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>{ rounds: "1", count: 15, color: C.cyan },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>{ rounds: "2", count: 12, color: C.blue },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>{ rounds: "3", count: 9, color: C.purple },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const totalBooked = m.calls_by_outcome.booked || 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const avgCallDur = "3:05";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const ratePreservation = (100 - (m.avg_discount_from_loadboard || 0)).toFixed(1);</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>const tabBtn = (id, label) =&gt; React.createElement("button", {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>key: id, onClick: () =&gt; setTab(id),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>style: { padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: tab === id ? C.cyan : C.text2, fontSize: 12, fontWeight: 600, borderBottom: tab === id ? `2px solid ${C.cyan}` : "2px solid transparent", letterSpacing: "0.03em", transition: "all 0.15s" }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}, label);</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>return React.createElement("div", { style: { background: C.bg, minHeight: "100vh" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// Header</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("header", { style: { padding: "14px 28px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: C.surface } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${C.cyan}, ${C.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 } }, "CS"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement("div", {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement("div", { style: { fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" } }, "Carrier Sales Command Center"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement("div", { style: { fontSize: 11, color: C.text3 } }, "AI Agent Analytics Dashboard")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, background: C.greenDim, border: `1px solid ${C.green}25` } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement("div", { style: { width: 6, height: 6, borderRadius: "50%", background: C.green, animation: "pulse 2s infinite" } }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement("span", { style: { color: C.green, fontSize: 11, fontWeight: 600 } }, "Agent Online")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement("button", {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>onClick: load,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text2, fontSize: 11, cursor: "pointer", fontWeight: 500 }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}, "Refresh")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>),</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// Tabs</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("nav", { style: { padding: "0 28px", borderBottom: `1px solid ${C.border}`, background: C.surface, display: "flex" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>tabBtn("overview", "Overview"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>tabBtn("calls", "Call Log"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>tabBtn("lanes", "Lanes"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>tabBtn("performance", "Performance")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>),</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// Content</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>React.createElement("main", { style: { padding: "20px 28px", maxWidth: 1320, margin: "0 auto" } },</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>// OVERVIEW</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>tab === "overview" &amp;&amp; React.createElement(React.Fragment, {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 20 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(KpiCard, { label: "Total Calls", value: m.total_calls, sub: "Last 14 days", color: C.cyan }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(KpiCard, { label: "Booking Rate", value: `${m.booking_rate}%`, sub: `${totalBooked} loads booked`, color: C.green }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(KpiCard, { label: "Revenue", value: `$${(m.revenue_booked || 0).toLocaleString()}`, sub: "Total agreed rates", color: C.green }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(KpiCard, { label: "Rate Saved", value: `${ratePreservation}%`, sub: "Avg rate preservation", color: C.cyan }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(KpiCard, { label: "Avg Rounds", value: m.avg_negotiation_rounds, sub: "Max 3 per call", color: C.purple }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(KpiCard, { label: "Answer Rate", value: "100%", sub: "Zero missed calls", color: C.green })</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement("div", { style: { display: "grid", gridTemplateColumns: "5fr 3fr", gap: 12, marginBottom: 12 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(Panel, { title: "Call Volume", subtitle: "Daily inbound calls and bookings" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement(ResponsiveContainer, { width: "100%", height: 220 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement(AreaChart, { data: m.calls_over_time },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("defs", {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>React.createElement("linearGradient", { id: "cg", x1: "0", y1: "0", x2: "0", y2: "1" }, React.createElement("stop", { offset: "0%", stopColor: C.cyan, stopOpacity: 0.2 }), React.createElement("stop", { offset: "100%", stopColor: C.cyan, stopOpacity: 0 })),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>React.createElement("linearGradient", { id: "bg2", x1: "0", y1: "0", x2: "0", y2: "1" }, React.createElement("stop", { offset: "0%", stopColor: C.green, stopOpacity: 0.2 }), React.createElement("stop", { offset: "100%", stopColor: C.green, stopOpacity: 0 }))</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: C.border, vertical: false }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(XAxis, { dataKey: "date", tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(YAxis, { tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false, width: 30 }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Tooltip, { content: React.createElement(ChartTip) }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Area, { type: "monotone", dataKey: "calls", stroke: C.cyan, fill: "url(#cg)", strokeWidth: 2, name: "Calls" }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Area, { type: "monotone", dataKey: "booked", stroke: C.green, fill: "url(#bg2)", strokeWidth: 2, name: "Booked" })</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(Panel, { title: "Outcomes", subtitle: "Call result distribution" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement(ResponsiveContainer, { width: "100%", height: 150 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement(PieChart, {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Pie, { data: oData, cx: "50%", cy: "50%", innerRadius: 38, outerRadius: 62, paddingAngle: 2, dataKey: "value", strokeWidth: 0 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>oData.map((e, i) =&gt; React.createElement(Cell, { key: i, fill: e.color }))</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Tooltip, { content: React.createElement(ChartTip) })</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>oData.map((d, i) =&gt; React.createElement("div", { key: i, style: { display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: C.text2 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { width: 6, height: 6, borderRadius: 2, background: d.color } }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>`${d.name} (${d.value})`</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>))</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(Panel, { title: "Sentiment", subtitle: "Carrier emotional tone" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement(ResponsiveContainer, { width: "100%", height: 180 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement(BarChart, { data: sData, layout: "vertical", barSize: 16 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: C.border, horizontal: false }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(XAxis, { type: "number", tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(YAxis, { type: "category", dataKey: "name", tick: { fill: C.text2, fontSize: 11 }, axisLine: false, tickLine: false, width: 70 }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Tooltip, { content: React.createElement(ChartTip) }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Bar, { dataKey: "value", name: "Calls", radius: [0, 4, 4, 0] },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>sData.map((e, i) =&gt; React.createElement(Cell, { key: i, fill: e.color }))</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(Panel, { title: "Negotiation Depth", subtitle: "Rounds before resolution" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement(ResponsiveContainer, { width: "100%", height: 180 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement(BarChart, { data: nData, barSize: 32 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: C.border, vertical: false }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(XAxis, { dataKey: "rounds", tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(YAxis, { tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false, width: 30 }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Tooltip, { content: React.createElement(ChartTip) }),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement(Bar, { dataKey: "count", name: "Calls", radius: [4, 4, 0, 0] },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>nData.map((e, i) =&gt; React.createElement(Cell, { key: i, fill: e.color }))</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>),</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>// CALL LOG</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>tab === "calls" &amp;&amp; React.createElement(React.Fragment, {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement(Panel, { title: "Recent Calls", subtitle: `${(m.recent_calls || []).length} calls recorded. Click a row for details.` },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement("div", { style: { overflowX: "auto", margin: "-20px", padding: "0" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement("thead", {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("tr", { style: { borderBottom: `1px solid ${C.border}` } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>["Time", "Carrier", "MC #", "Outcome", "Sentiment", "Agreed / Listed", "Rnds", "Duration"].map(h =&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("th", { key: h, style: { padding: "10px 14px", textAlign: "left", color: C.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" } }, h)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement("tbody", {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>(m.recent_calls || []).map((c, i) =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>const ts = new Date(c.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>const dur = c.call_duration_seconds ? `${Math.floor(c.call_duration_seconds / 60)}:${String(c.call_duration_seconds % 60).padStart(2, "0")}` : "-";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>const rate = c.agreed_rate ? `$${c.agreed_rate.toLocaleString()}` : "-";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>const listed = c.loadboard_rate ? ` / $${c.loadboard_rate.toLocaleString()}` : "";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>return React.createElement("tr", {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>key: c.call_id || i,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>onClick: () =&gt; setSelectedCall(c),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>style: { borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background 0.1s" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>onMouseEnter: e =&gt; e.currentTarget.style.background = C.surface2,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>onMouseLeave: e =&gt; e.currentTarget.style.background = "transparent",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, ts),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("td", { style: { padding: "10px 14px", fontWeight: 500 } }, c.carrier_name || "Unknown"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, `MC-${c.carrier_mc}`),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("td", { style: { padding: "10px 14px" } }, React.createElement(Badge, { label: OL[c.outcome] || c.outcome, color: OC[c.outcome] || C.text3 })),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("td", { style: { padding: "10px 14px" } }, React.createElement(Badge, { label: c.sentiment, color: SC[c.sentiment] || C.text3 })),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("td", { className: "mono", style: { padding: "10px 14px", fontSize: 11, color: c.agreed_rate ? C.green : C.text3 } }, rate + listed),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("td", { style: { padding: "10px 14px", textAlign: "center", color: C.text2 } }, c.negotiation_rounds || 0),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, dur)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                      </span>);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>})</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement(CallDrawer, { call: selectedCall, onClose: () =&gt; setSelectedCall(null) })</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>),</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>// LANES</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>tab === "lanes" &amp;&amp; React.createElement(React.Fragment, {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement(Panel, { title: "Top Lanes", subtitle: "Most popular origin-destination pairs by carrier interest" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>...(m.top_lanes || []).map((l, i) =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const cv = l.calls &gt; 0 ? Math.round((l.bookings / l.calls) * 100) : 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const maxC = Math.max(...m.top_lanes.map(x =&gt; x.calls));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>return React.createElement("div", { key: i, style: { display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 3fr", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i &lt; m.top_lanes.length - 1 ? `1px solid ${C.border}` : "none" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement("div", {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("span", { style: { color: C.cyan, fontWeight: 600, fontSize: 12 } }, l.origin),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("span", { style: { color: C.text3, margin: "0 6px", fontSize: 11 } }, "-&gt;"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("span", { style: { color: C.text, fontWeight: 500, fontSize: 12 } }, l.destination)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement("div", { style: { textAlign: "center" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { fontSize: 16, fontWeight: 700 } }, l.calls),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { fontSize: 9, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em" } }, "Calls")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement("div", { style: { textAlign: "center" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: C.green } }, l.bookings),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { fontSize: 9, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em" } }, "Booked")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement("div", { style: { textAlign: "center" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: cv &gt;= 50 ? C.green : C.amber } }, `${cv}%`),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { fontSize: 9, color: C.text3, textTransform: "uppercase" } }, "Conv.")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement("div", { style: { height: 6, background: C.surface2, borderRadius: 3, overflow: "hidden" } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { width: `${(l.calls / maxC) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${C.cyan}, ${C.purple})`, borderRadius: 3 } })</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>})</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>),</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>// PERFORMANCE</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>tab === "performance" &amp;&amp; React.createElement(React.Fragment, {},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(Panel, { title: "Rate Preservation" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.green, textAlign: "center", padding: "20px 0" } }, `${ratePreservation}%`),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "AI secured this percentage of the loadboard rate on average")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(Panel, { title: "Avg Call Duration" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.cyan, textAlign: "center", padding: "20px 0" } }, avgCallDur),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "From greeting to transfer for booked loads")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement(Panel, { title: "Cost per Booking" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.purple, textAlign: "center", padding: "20px 0" } }, "$0.77"),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "vs $15-25 per call with a human rep")</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>React.createElement(Panel, { title: "AI vs Human Performance", subtitle: "Estimated comparison based on industry benchmarks" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>React.createElement("div", { style: { display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 0 } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>...[</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>["Metric", "AI Agent", "Human Rep", true],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>["Answer Rate", "100%", "~65%", false],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>["Avg Response Time", "0 sec", "45-90 sec", false],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>["Cost per Call", "$0.77", "$15-25", false],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>["Calls/Hour Capacity", "Unlimited", "8-12", false],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>["Consistency", "100%", "Variable", false],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>["24/7 Availability", "Yes", "No", false],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>].map(([metric, ai, human, isHeader], i) =&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>React.createElement(React.Fragment, { key: i },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { padding: "10px 12px", borderBottom: `1px solid ${C.border}`, color: isHeader ? C.text2 : C.text, fontSize: 12, fontWeight: isHeader ? 600 : 400, textTransform: isHeader ? "uppercase" : "none", letterSpacing: isHeader ? "0.05em" : "0", background: isHeader ? C.surface2 : "transparent" } }, metric),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { padding: "10px 12px", borderBottom: `1px solid ${C.border}`, color: isHeader ? C.text2 : C.green, fontSize: 12, fontWeight: isHeader ? 600 : 500, textAlign: "center", textTransform: isHeader ? "uppercase" : "none", letterSpacing: isHeader ? "0.05em" : "0", background: isHeader ? C.surface2 : "transparent" } }, ai),</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>React.createElement("div", { style: { padding: "10px 12px", borderBottom: `1px solid ${C.border}`, color: isHeader ? C.text2 : C.text3, fontSize: 12, fontWeight: isHeader ? 600 : 400, textAlign: "center", textTransform: isHeader ? "uppercase" : "none", letterSpacing: isHeader ? "0.05em" : "0", background: isHeader ? C.surface2 : "transparent" } }, human)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                  </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+  <div id="root"></div>
+
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useMemo } = React;
+    const {
+      BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
+      Tooltip, ResponsiveContainer, AreaChart, Area, Legend
+    } = Recharts;
+
+    const C = {
+      bg: "#06080D", surface: "#0D1117", surface2: "#151B25",
+      border: "#1C2333", border2: "#2A3345",
+      text: "#E6EDF3", text2: "#8B949E", text3: "#484F58",
+      cyan: "#58A6FF", cyanDim: "#1A3A5C",
+      green: "#3FB950", greenDim: "#1A3D2B",
+      amber: "#D29922", amberDim: "#3D2E10",
+      red: "#F85149", redDim: "#3D1518",
+      purple: "#BC8CFF", purpleDim: "#2A1A4A",
+      blue: "#58A6FF",
+    };
+
+    const OC = { booked: C.green, carrier_declined: C.amber, no_match: C.text3, negotiation_failed: C.red, verification_failed: C.purple };
+    const OL = { booked: "Booked", carrier_declined: "Declined", no_match: "No Match", negotiation_failed: "Neg. Failed", verification_failed: "MC Failed" };
+    const SC = { positive: C.green, neutral: C.blue, negative: C.amber, aggressive: C.red };
+
+    function mockData() {
+      const outcomes = { booked: 18, carrier_declined: 12, no_match: 10, negotiation_failed: 6, verification_failed: 4 };
+      const sentiments = { positive: 20, neutral: 17, negative: 10, aggressive: 3 };
+      const days = [];
+      const now = new Date();
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        const calls = Math.floor(Math.random() * 5) + 2;
+        days.push({ date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }), calls, booked: Math.min(Math.floor(Math.random() * 3) + 1, calls) });
+      }
+      return {
+        total_calls: 50, calls_by_outcome: outcomes, calls_by_sentiment: sentiments,
+        booking_rate: 36.0, avg_negotiation_rounds: 1.8, avg_discount_from_loadboard: 4.2,
+        revenue_booked: 48230, calls_over_time: days,
+        top_lanes: [
+          { origin: "Chicago, IL", destination: "Dallas, TX", calls: 8, bookings: 4 },
+          { origin: "Los Angeles, CA", destination: "Phoenix, AZ", calls: 6, bookings: 3 },
+          { origin: "Atlanta, GA", destination: "Miami, FL", calls: 5, bookings: 2 },
+          { origin: "Houston, TX", destination: "Memphis, TN", calls: 4, bookings: 2 },
+          { origin: "Newark, NJ", destination: "Boston, MA", calls: 3, bookings: 1 },
+        ],
+        recent_calls: [
+          { call_id: "CALL-20260322-001", carrier_name: "Eagle Express Inc", carrier_mc: "482910", outcome: "booked", sentiment: "positive", agreed_rate: 2710, loadboard_rate: 2850, negotiation_rounds: 2, call_duration_seconds: 285, timestamp: "2026-03-22T14:32:00", load_id: "LD-1001" },
+          { call_id: "CALL-20260322-002", carrier_name: "Lone Star Freight", carrier_mc: "391055", outcome: "carrier_declined", sentiment: "neutral", agreed_rate: null, loadboard_rate: 1450, negotiation_rounds: 1, call_duration_seconds: 142, timestamp: "2026-03-22T13:15:00", load_id: "LD-1002" },
+          { call_id: "CALL-20260322-003", carrier_name: "Thunder Road Trucking", carrier_mc: "558432", outcome: "booked", sentiment: "positive", agreed_rate: 1750, loadboard_rate: 1800, negotiation_rounds: 1, call_duration_seconds: 195, timestamp: "2026-03-22T11:48:00", load_id: "LD-1003" },
+          { call_id: "CALL-20260322-004", carrier_name: "Pacific Coast Logistics", carrier_mc: "672190", outcome: "no_match", sentiment: "neutral", agreed_rate: null, loadboard_rate: null, negotiation_rounds: 0, call_duration_seconds: 88, timestamp: "2026-03-22T10:22:00", load_id: null },
+          { call_id: "CALL-20260322-005", carrier_name: "Iron Horse Freight", carrier_mc: "999999", outcome: "verification_failed", sentiment: "negative", agreed_rate: null, loadboard_rate: null, negotiation_rounds: 0, call_duration_seconds: 62, timestamp: "2026-03-22T09:05:00", load_id: null },
+          { call_id: "CALL-20260321-001", carrier_name: "Blue Line Carriers", carrier_mc: "223847", outcome: "negotiation_failed", sentiment: "negative", agreed_rate: null, loadboard_rate: 2200, negotiation_rounds: 3, call_duration_seconds: 340, timestamp: "2026-03-21T16:40:00", load_id: "LD-1004" },
+          { call_id: "CALL-20260321-002", carrier_name: "Summit Freight LLC", carrier_mc: "887654", outcome: "booked", sentiment: "positive", agreed_rate: 920, loadboard_rate: 950, negotiation_rounds: 1, call_duration_seconds: 155, timestamp: "2026-03-21T15:10:00", load_id: "LD-1005" },
+          { call_id: "CALL-20260321-003", carrier_name: "Great Plains Transport", carrier_mc: "445512", outcome: "carrier_declined", sentiment: "aggressive", agreed_rate: null, loadboard_rate: 2100, negotiation_rounds: 2, call_duration_seconds: 210, timestamp: "2026-03-21T14:00:00", load_id: "LD-1007" },
+          { call_id: "CALL-20260320-001", carrier_name: "Liberty Logistics", carrier_mc: "334521", outcome: "booked", sentiment: "positive", agreed_rate: 2350, loadboard_rate: 2400, negotiation_rounds: 2, call_duration_seconds: 270, timestamp: "2026-03-20T11:20:00", load_id: "LD-1011" },
+          { call_id: "CALL-20260320-002", carrier_name: "Northwind Trucking", carrier_mc: "776543", outcome: "no_match", sentiment: "neutral", agreed_rate: null, loadboard_rate: null, negotiation_rounds: 0, call_duration_seconds: 95, timestamp: "2026-03-20T09:45:00", load_id: null },
+        ],
+      };
+    }
+
+    // Components
+    function Badge({ label, color }) {
+      return React.createElement("span", {
+        style: { display: "inline-block", padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color, background: color + "15", border: `1px solid ${color}25` }
+      }, label);
+    }
+
+    function ChartTip({ active, payload, label }) {
+      if (!active || !payload?.length) return null;
+      return React.createElement("div", {
+        style: { background: C.surface2, border: `1px solid ${C.border2}`, borderRadius: 6, padding: "8px 12px", boxShadow: "0 4px 16px rgba(0,0,0,0.5)" }
+      },
+        React.createElement("div", { style: { color: C.text2, fontSize: 10, marginBottom: 4 } }, label),
+        ...payload.map((p, i) => React.createElement("div", { key: i, style: { color: p.color || C.text, fontSize: 12, fontWeight: 600 } }, `${p.name}: ${p.value}`))
+      );
+    }
+
+    function KpiCard({ label, value, sub, color, trend }) {
+      return React.createElement("div", {
+        className: "fade-in",
+        style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "18px 20px", position: "relative", overflow: "hidden", transition: "border-color 0.2s", cursor: "default" },
+        onMouseEnter: e => e.currentTarget.style.borderColor = color || C.border2,
+        onMouseLeave: e => e.currentTarget.style.borderColor = C.border,
+      },
+        React.createElement("div", { style: { position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: color || C.cyan, borderRadius: "10px 0 0 10px" } }),
+        React.createElement("div", { style: { color: C.text2, fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 } }, label),
+        React.createElement("div", { style: { display: "flex", alignItems: "baseline", gap: 8 } },
+          React.createElement("span", { className: "mono", style: { color: C.text, fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em" } }, value),
+          trend && React.createElement("span", { style: { color: trend > 0 ? C.green : C.red, fontSize: 11, fontWeight: 600 } }, trend > 0 ? `+${trend}%` : `${trend}%`)
+        ),
+        sub && React.createElement("div", { style: { color: C.text3, fontSize: 11, marginTop: 4 } }, sub)
+      );
+    }
+
+    function Panel({ title, subtitle, children, style }) {
+      return React.createElement("div", {
+        className: "fade-in",
+        style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, overflow: "hidden", ...style }
+      },
+        React.createElement("div", { style: { padding: "14px 20px", borderBottom: `1px solid ${C.border}` } },
+          React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: C.text } }, title),
+          subtitle && React.createElement("div", { style: { fontSize: 11, color: C.text3, marginTop: 2 } }, subtitle)
+        ),
+        React.createElement("div", { style: { padding: 20 } }, children)
+      );
+    }
+
+    // Call detail drawer
+    function CallDrawer({ call, onClose }) {
+      if (!call) return null;
+      const time = new Date(call.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      const dur = call.call_duration_seconds ? `${Math.floor(call.call_duration_seconds / 60)}:${String(call.call_duration_seconds % 60).padStart(2, "0")}` : "N/A";
+      const savings = call.agreed_rate && call.loadboard_rate ? ((1 - call.agreed_rate / call.loadboard_rate) * 100).toFixed(1) : null;
+
+      const row = (label, value, color) => React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` } },
+        React.createElement("span", { style: { color: C.text2, fontSize: 12 } }, label),
+        React.createElement("span", { className: "mono", style: { color: color || C.text, fontSize: 12, fontWeight: 500 } }, value)
+      );
+
+      return React.createElement("div", {
+        style: { position: "fixed", top: 0, right: 0, bottom: 0, width: 420, background: C.surface, borderLeft: `1px solid ${C.border}`, zIndex: 100, overflowY: "auto", boxShadow: "-8px 0 32px rgba(0,0,0,0.5)" }
+      },
+        React.createElement("div", { style: { padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" } },
+          React.createElement("div", { style: { fontSize: 14, fontWeight: 600 } }, "Call Details"),
+          React.createElement("button", { onClick: onClose, style: { background: "none", border: "none", color: C.text2, fontSize: 18, cursor: "pointer", padding: "4px 8px" } }, "x")
+        ),
+        React.createElement("div", { style: { padding: 20 } },
+          React.createElement("div", { style: { fontSize: 16, fontWeight: 600, marginBottom: 4 } }, call.carrier_name || "Unknown Carrier"),
+          React.createElement("div", { className: "mono", style: { fontSize: 11, color: C.text3, marginBottom: 16 } }, `MC-${call.carrier_mc} | ${call.call_id}`),
+          React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20 } },
+            React.createElement(Badge, { label: OL[call.outcome] || call.outcome, color: OC[call.outcome] || C.text3 }),
+            React.createElement(Badge, { label: call.sentiment, color: SC[call.sentiment] || C.text3 })
+          ),
+          row("Time", time),
+          row("Duration", dur),
+          row("Load", call.load_id || "No load discussed"),
+          row("Loadboard Rate", call.loadboard_rate ? `$${call.loadboard_rate.toLocaleString()}` : "N/A"),
+          row("Agreed Rate", call.agreed_rate ? `$${call.agreed_rate.toLocaleString()}` : "No deal", call.agreed_rate ? C.green : C.text3),
+          row("Negotiation Rounds", `${call.negotiation_rounds || 0} / 3`),
+          savings && row("Rate Preservation", `${(100 - parseFloat(savings)).toFixed(1)}%`, parseFloat(savings) < 10 ? C.green : C.amber),
+        )
+      );
+    }
+
+    // Main app
+    function App() {
+      const [m, setM] = useState(null);
+      const [tab, setTab] = useState("overview");
+      const [selectedCall, setSelectedCall] = useState(null);
+      const [loading, setLoading] = useState(true);
+
+      const load = useCallback(async () => {
+        try {
+          const apiKey = new URLSearchParams(window.location.search).get("key") || "";
+          const headers = apiKey ? { "x-api-key": apiKey } : {};
+          const [mr, cr] = await Promise.all([
+            fetch("/api/metrics", { headers }).catch(() => null),
+            fetch("/api/calls/recent?limit=30", { headers }).catch(() => null),
+          ]);
+          if (mr?.ok && cr?.ok) {
+            const md = await mr.json(); const cd = await cr.json();
+            setM({ ...md, recent_calls: cd.calls || [] });
+          } else setM(mockData());
+        } catch { setM(mockData()); }
+        setLoading(false);
+      }, []);
+
+      useEffect(() => { load(); }, [load]);
+
+      if (loading) return React.createElement("div", { style: { background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" } },
+        React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 12 } },
+          React.createElement("div", { style: { width: 32, height: 32, border: `3px solid ${C.border}`, borderTopColor: C.cyan, borderRadius: "50%", animation: "spin 0.8s linear infinite" } }),
+          React.createElement("span", { style: { color: C.text2, fontSize: 13 } }, "Loading metrics..."),
+          React.createElement("style", {}, "@keyframes spin { to { transform: rotate(360deg); } }")
+        )
+      );
+
+      if (!m) return null;
+
+      const oData = Object.entries(m.calls_by_outcome).map(([k, v]) => ({ name: OL[k] || k, value: v, color: OC[k] || C.text3 }));
+      const sData = Object.entries(m.calls_by_sentiment).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v, color: SC[k] || C.text3 }));
+      const nData = [
+        { rounds: "0", count: (m.calls_by_outcome.no_match || 0) + (m.calls_by_outcome.verification_failed || 0), color: C.text3 },
+        { rounds: "1", count: 15, color: C.cyan },
+        { rounds: "2", count: 12, color: C.blue },
+        { rounds: "3", count: 9, color: C.purple },
+      ];
+      const totalBooked = m.calls_by_outcome.booked || 0;
+      const avgCallDur = "3:05";
+      const ratePreservation = (100 - (m.avg_discount_from_loadboard || 0)).toFixed(1);
+
+      const tabBtn = (id, label) => React.createElement("button", {
+        key: id, onClick: () => setTab(id),
+        style: { padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: tab === id ? C.cyan : C.text2, fontSize: 12, fontWeight: 600, borderBottom: tab === id ? `2px solid ${C.cyan}` : "2px solid transparent", letterSpacing: "0.03em", transition: "all 0.15s" }
+      }, label);
+
+      return React.createElement("div", { style: { background: C.bg, minHeight: "100vh" } },
+        // Header
+        React.createElement("header", { style: { padding: "14px 28px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: C.surface } },
+          React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
+            React.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${C.cyan}, ${C.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 } }, "CS"),
+            React.createElement("div", {},
+              React.createElement("div", { style: { fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" } }, "Carrier Sales Command Center"),
+              React.createElement("div", { style: { fontSize: 11, color: C.text3 } }, "AI Agent Analytics Dashboard")
+            )
+          ),
+          React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6, background: C.greenDim, border: `1px solid ${C.green}25` } },
+              React.createElement("div", { style: { width: 6, height: 6, borderRadius: "50%", background: C.green, animation: "pulse 2s infinite" } }),
+              React.createElement("span", { style: { color: C.green, fontSize: 11, fontWeight: 600 } }, "Agent Online")
+            ),
+            React.createElement("button", {
+              onClick: load,
+              style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text2, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+            }, "Refresh")
+          )
+        ),
+
+        // Tabs
+        React.createElement("nav", { style: { padding: "0 28px", borderBottom: `1px solid ${C.border}`, background: C.surface, display: "flex" } },
+          tabBtn("overview", "Overview"),
+          tabBtn("calls", "Call Log"),
+          tabBtn("lanes", "Lanes"),
+          tabBtn("performance", "Performance")
+        ),
+
+        // Content
+        React.createElement("main", { style: { padding: "20px 28px", maxWidth: 1320, margin: "0 auto" } },
+
+          // OVERVIEW
+          tab === "overview" && React.createElement(React.Fragment, {},
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 20 } },
+              React.createElement(KpiCard, { label: "Total Calls", value: m.total_calls, sub: "Last 14 days", color: C.cyan }),
+              React.createElement(KpiCard, { label: "Booking Rate", value: `${m.booking_rate}%`, sub: `${totalBooked} loads booked`, color: C.green }),
+              React.createElement(KpiCard, { label: "Revenue", value: `$${(m.revenue_booked || 0).toLocaleString()}`, sub: "Total agreed rates", color: C.green }),
+              React.createElement(KpiCard, { label: "Rate Saved", value: `${ratePreservation}%`, sub: "Avg rate preservation", color: C.cyan }),
+              React.createElement(KpiCard, { label: "Avg Rounds", value: m.avg_negotiation_rounds, sub: "Max 3 per call", color: C.purple }),
+              React.createElement(KpiCard, { label: "Answer Rate", value: "100%", sub: "Zero missed calls", color: C.green })
+            ),
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "5fr 3fr", gap: 12, marginBottom: 12 } },
+              React.createElement(Panel, { title: "Call Volume", subtitle: "Daily inbound calls and bookings" },
+                React.createElement(ResponsiveContainer, { width: "100%", height: 220 },
+                  React.createElement(AreaChart, { data: m.calls_over_time },
+                    React.createElement("defs", {},
+                      React.createElement("linearGradient", { id: "cg", x1: "0", y1: "0", x2: "0", y2: "1" }, React.createElement("stop", { offset: "0%", stopColor: C.cyan, stopOpacity: 0.2 }), React.createElement("stop", { offset: "100%", stopColor: C.cyan, stopOpacity: 0 })),
+                      React.createElement("linearGradient", { id: "bg2", x1: "0", y1: "0", x2: "0", y2: "1" }, React.createElement("stop", { offset: "0%", stopColor: C.green, stopOpacity: 0.2 }), React.createElement("stop", { offset: "100%", stopColor: C.green, stopOpacity: 0 }))
+                    ),
+                    React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: C.border, vertical: false }),
+                    React.createElement(XAxis, { dataKey: "date", tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false }),
+                    React.createElement(YAxis, { tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false, width: 30 }),
+                    React.createElement(Tooltip, { content: React.createElement(ChartTip) }),
+                    React.createElement(Area, { type: "monotone", dataKey: "calls", stroke: C.cyan, fill: "url(#cg)", strokeWidth: 2, name: "Calls" }),
+                    React.createElement(Area, { type: "monotone", dataKey: "booked", stroke: C.green, fill: "url(#bg2)", strokeWidth: 2, name: "Booked" })
+                  )
+                )
+              ),
+              React.createElement(Panel, { title: "Outcomes", subtitle: "Call result distribution" },
+                React.createElement(ResponsiveContainer, { width: "100%", height: 150 },
+                  React.createElement(PieChart, {},
+                    React.createElement(Pie, { data: oData, cx: "50%", cy: "50%", innerRadius: 38, outerRadius: 62, paddingAngle: 2, dataKey: "value", strokeWidth: 0 },
+                      oData.map((e, i) => React.createElement(Cell, { key: i, fill: e.color }))
+                    ),
+                    React.createElement(Tooltip, { content: React.createElement(ChartTip) })
+                  )
+                ),
+                React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" } },
+                  oData.map((d, i) => React.createElement("div", { key: i, style: { display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: C.text2 } },
+                    React.createElement("div", { style: { width: 6, height: 6, borderRadius: 2, background: d.color } }),
+                    `${d.name} (${d.value})`
+                  ))
+                )
+              )
+            ),
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+              React.createElement(Panel, { title: "Sentiment", subtitle: "Carrier emotional tone" },
+                React.createElement(ResponsiveContainer, { width: "100%", height: 180 },
+                  React.createElement(BarChart, { data: sData, layout: "vertical", barSize: 16 },
+                    React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: C.border, horizontal: false }),
+                    React.createElement(XAxis, { type: "number", tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false }),
+                    React.createElement(YAxis, { type: "category", dataKey: "name", tick: { fill: C.text2, fontSize: 11 }, axisLine: false, tickLine: false, width: 70 }),
+                    React.createElement(Tooltip, { content: React.createElement(ChartTip) }),
+                    React.createElement(Bar, { dataKey: "value", name: "Calls", radius: [0, 4, 4, 0] },
+                      sData.map((e, i) => React.createElement(Cell, { key: i, fill: e.color }))
+                    )
+                  )
+                )
+              ),
+              React.createElement(Panel, { title: "Negotiation Depth", subtitle: "Rounds before resolution" },
+                React.createElement(ResponsiveContainer, { width: "100%", height: 180 },
+                  React.createElement(BarChart, { data: nData, barSize: 32 },
+                    React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: C.border, vertical: false }),
+                    React.createElement(XAxis, { dataKey: "rounds", tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false }),
+                    React.createElement(YAxis, { tick: { fill: C.text3, fontSize: 10 }, axisLine: false, tickLine: false, width: 30 }),
+                    React.createElement(Tooltip, { content: React.createElement(ChartTip) }),
+                    React.createElement(Bar, { dataKey: "count", name: "Calls", radius: [4, 4, 0, 0] },
+                      nData.map((e, i) => React.createElement(Cell, { key: i, fill: e.color }))
+                    )
+                  )
+                )
+              )
+            )
+          ),
+
+          // CALL LOG
+          tab === "calls" && React.createElement(React.Fragment, {},
+            React.createElement(Panel, { title: "Recent Calls", subtitle: `${(m.recent_calls || []).length} calls recorded. Click a row for details.` },
+              React.createElement("div", { style: { overflowX: "auto", margin: "-20px", padding: "0" } },
+                React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
+                  React.createElement("thead", {},
+                    React.createElement("tr", { style: { borderBottom: `1px solid ${C.border}` } },
+                      ["Time", "Carrier", "MC #", "Outcome", "Sentiment", "Agreed / Listed", "Rnds", "Duration"].map(h =>
+                        React.createElement("th", { key: h, style: { padding: "10px 14px", textAlign: "left", color: C.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" } }, h)
+                      )
+                    )
+                  ),
+                  React.createElement("tbody", {},
+                    (m.recent_calls || []).map((c, i) => {
+                      const ts = new Date(c.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+                      const dur = c.call_duration_seconds ? `${Math.floor(c.call_duration_seconds / 60)}:${String(c.call_duration_seconds % 60).padStart(2, "0")}` : "-";
+                      const rate = c.agreed_rate ? `$${c.agreed_rate.toLocaleString()}` : "-";
+                      const listed = c.loadboard_rate ? ` / $${c.loadboard_rate.toLocaleString()}` : "";
+                      return React.createElement("tr", {
+                        key: c.call_id || i,
+                        onClick: () => setSelectedCall(c),
+                        style: { borderBottom: `1px solid ${C.border}`, cursor: "pointer", transition: "background 0.1s" },
+                        onMouseEnter: e => e.currentTarget.style.background = C.surface2,
+                        onMouseLeave: e => e.currentTarget.style.background = "transparent",
+                      },
+                        React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, ts),
+                        React.createElement("td", { style: { padding: "10px 14px", fontWeight: 500 } }, c.carrier_name || "Unknown"),
+                        React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, `MC-${c.carrier_mc}`),
+                        React.createElement("td", { style: { padding: "10px 14px" } }, React.createElement(Badge, { label: OL[c.outcome] || c.outcome, color: OC[c.outcome] || C.text3 })),
+                        React.createElement("td", { style: { padding: "10px 14px" } }, React.createElement(Badge, { label: c.sentiment, color: SC[c.sentiment] || C.text3 })),
+                        React.createElement("td", { className: "mono", style: { padding: "10px 14px", fontSize: 11, color: c.agreed_rate ? C.green : C.text3 } }, rate + listed),
+                        React.createElement("td", { style: { padding: "10px 14px", textAlign: "center", color: C.text2 } }, c.negotiation_rounds || 0),
+                        React.createElement("td", { className: "mono", style: { padding: "10px 14px", color: C.text2, fontSize: 11 } }, dur)
+                      );
+                    })
+                  )
+                )
+              )
+            ),
+            React.createElement(CallDrawer, { call: selectedCall, onClose: () => setSelectedCall(null) })
+          ),
+
+          // LANES
+          tab === "lanes" && React.createElement(React.Fragment, {},
+            React.createElement(Panel, { title: "Top Lanes", subtitle: "Most popular origin-destination pairs by carrier interest" },
+              ...(m.top_lanes || []).map((l, i) => {
+                const cv = l.calls > 0 ? Math.round((l.bookings / l.calls) * 100) : 0;
+                const maxC = Math.max(...m.top_lanes.map(x => x.calls));
+                return React.createElement("div", { key: i, style: { display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr 1fr 3fr", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < m.top_lanes.length - 1 ? `1px solid ${C.border}` : "none" } },
+                  React.createElement("div", {},
+                    React.createElement("span", { style: { color: C.cyan, fontWeight: 600, fontSize: 12 } }, l.origin),
+                    React.createElement("span", { style: { color: C.text3, margin: "0 6px", fontSize: 11 } }, "->"),
+                    React.createElement("span", { style: { color: C.text, fontWeight: 500, fontSize: 12 } }, l.destination)
+                  ),
+                  React.createElement("div", { style: { textAlign: "center" } },
+                    React.createElement("div", { style: { fontSize: 16, fontWeight: 700 } }, l.calls),
+                    React.createElement("div", { style: { fontSize: 9, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em" } }, "Calls")
+                  ),
+                  React.createElement("div", { style: { textAlign: "center" } },
+                    React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: C.green } }, l.bookings),
+                    React.createElement("div", { style: { fontSize: 9, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em" } }, "Booked")
+                  ),
+                  React.createElement("div", { style: { textAlign: "center" } },
+                    React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: cv >= 50 ? C.green : C.amber } }, `${cv}%`),
+                    React.createElement("div", { style: { fontSize: 9, color: C.text3, textTransform: "uppercase" } }, "Conv.")
+                  ),
+                  React.createElement("div", { style: { height: 6, background: C.surface2, borderRadius: 3, overflow: "hidden" } },
+                    React.createElement("div", { style: { width: `${(l.calls / maxC) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${C.cyan}, ${C.purple})`, borderRadius: 3 } })
+                  )
+                );
+              })
+            )
+          ),
+
+          // PERFORMANCE
+          tab === "performance" && React.createElement(React.Fragment, {},
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 } },
+              React.createElement(Panel, { title: "Rate Preservation" },
+                React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.green, textAlign: "center", padding: "20px 0" } }, `${ratePreservation}%`),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "AI secured this percentage of the loadboard rate on average")
+              ),
+              React.createElement(Panel, { title: "Avg Call Duration" },
+                React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.cyan, textAlign: "center", padding: "20px 0" } }, avgCallDur),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "From greeting to transfer for booked loads")
+              ),
+              React.createElement(Panel, { title: "Cost per Booking" },
+                React.createElement("div", { className: "mono", style: { fontSize: 40, fontWeight: 700, color: C.purple, textAlign: "center", padding: "20px 0" } }, "$0.77"),
+                React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "vs $15-25 per call with a human rep")
+              )
+            ),
+            React.createElement(Panel, { title: "AI vs Human Performance", subtitle: "Estimated comparison based on industry benchmarks" },
+              React.createElement("div", { style: { display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 0 } },
+                ...[
+                  ["Metric", "AI Agent", "Human Rep", true],
+                  ["Answer Rate", "100%", "~65%", false],
+                  ["Avg Response Time", "0 sec", "45-90 sec", false],
+                  ["Cost per Call", "$0.77", "$15-25", false],
+                  ["Calls/Hour Capacity", "Unlimited", "8-12", false],
+                  ["Consistency", "100%", "Variable", false],
+                  ["24/7 Availability", "Yes", "No", false],
+                ].map(([metric, ai, human, isHeader], i) =>
+                  React.createElement(React.Fragment, { key: i },
+                    React.createElement("div", { style: { padding: "10px 12px", borderBottom: `1px solid ${C.border}`, color: isHeader ? C.text2 : C.text, fontSize: 12, fontWeight: isHeader ? 600 : 400, textTransform: isHeader ? "uppercase" : "none", letterSpacing: isHeader ? "0.05em" : "0", background: isHeader ? C.surface2 : "transparent" } }, metric),
+                    React.createElement("div", { style: { padding: "10px 12px", borderBottom: `1px solid ${C.border}`, color: isHeader ? C.text2 : C.green, fontSize: 12, fontWeight: isHeader ? 600 : 500, textAlign: "center", textTransform: isHeader ? "uppercase" : "none", letterSpacing: isHeader ? "0.05em" : "0", background: isHeader ? C.surface2 : "transparent" } }, ai),
+                    React.createElement("div", { style: { padding: "10px 12px", borderBottom: `1px solid ${C.border}`, color: isHeader ? C.text2 : C.text3, fontSize: 12, fontWeight: isHeader ? 600 : 400, textAlign: "center", textTransform: isHeader ? "uppercase" : "none", letterSpacing: isHeader ? "0.05em" : "0", background: isHeader ? C.surface2 : "transparent" } }, human)
+                  )
+                )
+              )
+            )
+          )
+        )
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
 </body>
 </html>
