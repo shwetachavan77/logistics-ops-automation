@@ -19,21 +19,10 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         "/api/auth/login",
     }
 
-    # GET endpoints the dashboard needs without auth
-    DASHBOARD_PATHS = {
-        "/api/metrics",
-        "/api/calls/recent",
-        "/api/loads",
-    }
-
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
         if path in self.EXEMPT_PATHS or not path.startswith("/api"):
-            return await call_next(request)
-
-        # Allow dashboard GET requests without auth
-        if request.method == "GET" and path in self.DASHBOARD_PATHS:
             return await call_next(request)
 
         provided_key = request.headers.get("x-api-key")
