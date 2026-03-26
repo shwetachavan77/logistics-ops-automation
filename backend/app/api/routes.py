@@ -434,6 +434,71 @@ async def cleanup_calls(request: Request):
     return {"status": "ok", "deleted": deleted or 0}
 
 
+@router.post("/calls/backfill")
+@limiter.limit("5/minute")
+async def backfill_calls(request: Request):
+    """Normalize and backfill existing call records."""
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        fixes = {}
+
+        # 1. Normalize sentiment to lowercase
+        sentiment_fixed = await conn.fetchval(
+            "SELECT COUNT(*) FROM calls WHERE sentiment != LOWER(sentiment)"
+        )
+        await conn.execute("UPDATE calls SET sentiment = LOWER(sentiment)")
+        fixes["sentiment_normalized"] = sentiment_fixed or 0
+
+        # 2. Normalize outcome to lowercase
+        outcome_fixed = await conn.fetchval(
+            "SELECT COUNT(*) FROM calls WHERE outcome != LOWER(outcome)"
+        )
+        await conn.execute("UPDATE calls SET outcome = LOWER(outcome)")
+        fixes["outcome_normalized"] = outcome_fixed or 0
+
+        # 3. Backfill loadboard_rate from loads table where missing or discounted
+        rate_fixed = await conn.fetchval("""
+            SELECT COUNT(*) FROM calls c
+            JOIN loads l ON c.load_id = l.load_id
+            WHERE c.loadboard_rate IS NULL OR c.loadboard_rate != l.loadboard_rate
+        """)
+        await conn.execute("""
+            UPDATE calls SET loadboard_rate = l.loadboard_rate
+            FROM loads l
+            WHERE calls.load_id = l.load_id
+            AND (calls.loadboard_rate IS NULL OR calls.loadboard_rate != l.loadboard_rate)
+        """)
+        fixes["loadboard_rate_backfilled"] = rate_fixed or 0
+
+        # 4. Clean up empty string fields to NULL
+        for field in ["carrier_mc", "carrier_name", "load_id", "transcript", "notes", "sms_text"]:
+            await conn.execute(f"UPDATE calls SET {field} = NULL WHERE {field} = ''")
+        fixes["empty_strings_cleaned"] = True
+
+        # 5. Fix negotiation_rounds from negotiations table
+        rounds_fixed = await conn.fetchval("""
+            SELECT COUNT(*) FROM calls c
+            WHERE c.negotiation_rounds = 0
+            AND EXISTS (SELECT 1 FROM negotiations n WHERE n.call_id = c.call_id)
+        """)
+        await conn.execute("""
+            UPDATE calls SET negotiation_rounds = sub.round_count
+            FROM (
+                SELECT call_id, MAX(round_number) as round_count
+                FROM negotiations
+                GROUP BY call_id
+            ) sub
+            WHERE calls.call_id = sub.call_id
+            AND (calls.negotiation_rounds IS NULL OR calls.negotiation_rounds = 0)
+        """)
+        fixes["negotiation_rounds_backfilled"] = rounds_fixed or 0
+
+        total_calls = await conn.fetchval("SELECT COUNT(*) FROM calls")
+        fixes["total_calls"] = total_calls or 0
+
+    return {"status": "ok", "fixes": fixes}
+
+
 @router.post("/loads/refresh")
 @limiter.limit("10/minute")
 async def refresh_loads(request: Request):
