@@ -1,7 +1,7 @@
 """Pydantic schemas for loads, calls, negotiations, alerts, and API payloads."""
 
 from pydantic import BaseModel, Field
-from typing import Optional, List, Union
+from typing import Any, Optional, List, Union
 from datetime import datetime
 from enum import Enum
 
@@ -131,7 +131,7 @@ class CallLog(BaseModel):
     loadboard_rate: Optional[Union[str, int, float]] = None
     call_duration_seconds: Optional[Union[str, int]] = None
     call_duration: Optional[Union[str, int]] = None
-    transcript: Optional[str] = None
+    transcript: Optional[Any] = None
     notes: Optional[str] = None
     sms_text: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)

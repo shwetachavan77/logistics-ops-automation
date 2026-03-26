@@ -136,6 +136,9 @@ async def log_call(request: Request, call: CallLog):
     call.loadboard_rate = clean_float(call.loadboard_rate)
     call.negotiation_rounds = clean_int(call.negotiation_rounds) or 0
     call.call_duration_seconds = clean_int(call.call_duration_seconds) or clean_int(call.call_duration)
+    # Transcript may come as string, list, or empty array from HappyRobot
+    if isinstance(call.transcript, list):
+        call.transcript = "\n".join(str(item) for item in call.transcript) if call.transcript else None
     call.transcript = clean_str(call.transcript)
     call.notes = clean_str(call.notes)
     call.sms_text = clean_str(call.sms_text)
