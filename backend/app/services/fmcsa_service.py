@@ -1,5 +1,6 @@
 """FMCSA carrier verification via SAFER system."""
 
+import os
 import httpx
 from typing import Optional
 from app.models.schemas import CarrierVerificationResponse
