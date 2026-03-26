@@ -145,6 +145,41 @@ async def log_call(request: Request, call: CallLog):
     return await call_service.log_call(call)
 
 
+@router.post("/calls/update-sms")
+@limiter.limit("30/minute")
+async def update_call_sms(request: Request):
+    """Update an existing call record with SMS text and notes from the Paths branch."""
+    body = await request.json()
+    call_id = body.get("call_id")
+    sms_text = clean_str(body.get("sms_text"))
+    notes = clean_str(body.get("notes"))
+
+    if not call_id:
+        return {"status": "error", "message": "call_id required"}
+
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        updates = []
+        params = []
+        idx = 1
+        if sms_text:
+            updates.append(f"sms_text = ${idx}")
+            params.append(sms_text)
+            idx += 1
+        if notes:
+            updates.append(f"notes = ${idx}")
+            params.append(notes)
+            idx += 1
+        if not updates:
+            return {"status": "ok", "message": "nothing to update"}
+        params.append(call_id)
+        await conn.execute(
+            f"UPDATE calls SET {', '.join(updates)} WHERE call_id = ${idx}",
+            *params
+        )
+    return {"status": "ok", "call_id": call_id}
+
+
 # ---- V2: Missed opportunity alert ----
 
 @router.post("/alerts/missed-opportunity")
