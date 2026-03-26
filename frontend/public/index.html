@@ -266,7 +266,8 @@
       const [selectedCall, setSelectedCall] = useState(null);
       const [loading, setLoading] = useState(true);
       const [demo, setDemo] = useState(false);
-      const [filter, setFilter] = useState("All");
+      const [filter, setFilter] = useState(["All"]);
+      const [sortBy, setSortBy] = useState("time_desc");
       const [liveCalls, setLiveCalls] = useState(0);
 
       useEffect(() => {
@@ -315,7 +316,30 @@
 
       if (!m) return null;
 
-      const filteredCalls = filter === "All" ? (m.recent_calls || []) : (m.recent_calls || []).filter(c => c.outcome === filter);
+      const filteredCalls = (() => {
+        let calls = filter.includes("All") ? (m.recent_calls || []) : (m.recent_calls || []).filter(c => filter.includes(c.outcome));
+        const sorters = {
+          time_desc: (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
+          time_asc: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+          carrier_desc: (a, b) => (b.carrier_name || "").localeCompare(a.carrier_name || ""),
+          carrier_asc: (a, b) => (a.carrier_name || "").localeCompare(b.carrier_name || ""),
+          outcome_desc: (a, b) => (b.outcome || "").localeCompare(a.outcome || ""),
+          outcome_asc: (a, b) => (a.outcome || "").localeCompare(b.outcome || ""),
+          sentiment_desc: (a, b) => { const o = { positive: 0, neutral: 1, negative: 2, aggressive: 3 }; return (o[a.sentiment] || 4) - (o[b.sentiment] || 4); },
+          sentiment_asc: (a, b) => { const o = { positive: 0, neutral: 1, negative: 2, aggressive: 3 }; return (o[b.sentiment] || 4) - (o[a.sentiment] || 4); },
+          rate_desc: (a, b) => (b.agreed_rate || 0) - (a.agreed_rate || 0),
+          rate_asc: (a, b) => (a.agreed_rate || 0) - (b.agreed_rate || 0),
+          listed_desc: (a, b) => (b.loadboard_rate || 0) - (a.loadboard_rate || 0),
+          listed_asc: (a, b) => (a.loadboard_rate || 0) - (b.loadboard_rate || 0),
+          delta_desc: (a, b) => ((b.agreed_rate || 0) - (b.loadboard_rate || 0)) - ((a.agreed_rate || 0) - (a.loadboard_rate || 0)),
+          delta_asc: (a, b) => ((a.agreed_rate || 0) - (a.loadboard_rate || 0)) - ((b.agreed_rate || 0) - (b.loadboard_rate || 0)),
+          rounds_desc: (a, b) => (b.negotiation_rounds || 0) - (a.negotiation_rounds || 0),
+          rounds_asc: (a, b) => (a.negotiation_rounds || 0) - (b.negotiation_rounds || 0),
+          duration_desc: (a, b) => (b.call_duration_seconds || 0) - (a.call_duration_seconds || 0),
+          duration_asc: (a, b) => (a.call_duration_seconds || 0) - (b.call_duration_seconds || 0),
+        };
+        return [...calls].sort(sorters[sortBy] || sorters.time_desc);
+      })();
 
       const oData = Object.entries(m.calls_by_outcome || {}).map(([k, v]) => ({ name: OL[k] || k, value: v, color: OC[k] || C.text3 }));
       const sData = Object.entries(m.calls_by_sentiment || {}).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v, color: SC[k] || C.text3 }));
@@ -624,13 +648,25 @@
 
           // CALL LOG
           tab === "calls" && React.createElement("div", { style: { minHeight: 200 } },
-            React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12 } },
-              ["All", "booked", "carrier_declined", "no_match", "negotiation_failed", "verification_failed"].map(f =>
-                React.createElement("button", {
-                  key: f, onClick: () => setFilter(f),
-                  style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${f === filter ? C.cyan : C.border}`, background: f === filter ? C.cyanDim : C.surface, color: f === filter ? C.cyan : C.text2, fontSize: 11, cursor: "pointer", fontWeight: 500 }
-                }, f === "All" ? "All" : OL[f] || f)
-              )
+            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 } },
+              React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
+                ["All", "booked", "carrier_declined", "no_match", "negotiation_failed", "verification_failed"].map(f =>
+                  React.createElement("button", {
+                    key: f, onClick: () => {
+                      if (f === "All") { setFilter(["All"]); }
+                      else {
+                        setFilter(prev => {
+                          const without = prev.filter(x => x !== "All" && x !== f);
+                          if (prev.includes(f)) return without.length === 0 ? ["All"] : without;
+                          return [...without, f];
+                        });
+                      }
+                    },
+                    style: { padding: "4px 10px", borderRadius: 6, border: `1px solid ${(f === "All" ? filter.includes("All") : filter.includes(f)) ? C.cyan : C.border}`, background: (f === "All" ? filter.includes("All") : filter.includes(f)) ? C.cyanDim : C.surface, color: (f === "All" ? filter.includes("All") : filter.includes(f)) ? C.cyan : C.text2, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+                  }, f === "All" ? `All (${(m.recent_calls || []).length})` : `${OL[f] || f} (${(m.recent_calls || []).filter(c => c.outcome === f).length})`)
+                )
+              ),
+              React.createElement("div", { style: { fontSize: 10, color: C.text3 } }, "Click column headers to sort")
             ),
             React.createElement(Panel, { title: "Recent Calls", subtitle: `${filteredCalls.length} calls shown. Click a row for details.` },
               filteredCalls.length === 0 ? React.createElement("div", { style: { textAlign: "center", padding: "40px 0" } },
@@ -641,9 +677,27 @@
                 React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
                   React.createElement("thead", {},
                     React.createElement("tr", { style: { borderBottom: `1px solid ${C.border}` } },
-                      ["Time", "Carrier", "MC #", "Load", "Outcome", "Sentiment", "Agreed", "Listed", "Delta", "Rnds", "Duration"].map(h =>
-                        React.createElement("th", { key: h, style: { padding: "10px 12px", textAlign: "left", color: C.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" } }, h)
-                      )
+                      [
+                        { label: "Time", key: "time" },
+                        { label: "Carrier", key: "carrier" },
+                        { label: "MC #", key: null },
+                        { label: "Load", key: null },
+                        { label: "Outcome", key: "outcome" },
+                        { label: "Sentiment", key: "sentiment" },
+                        { label: "Agreed", key: "rate" },
+                        { label: "Listed", key: "listed" },
+                        { label: "Delta", key: "delta" },
+                        { label: "Rnds", key: "rounds" },
+                        { label: "Duration", key: "duration" },
+                      ].map(h => {
+                        const active = h.key && sortBy.startsWith(h.key);
+                        const isDesc = sortBy.endsWith("_desc");
+                        return React.createElement("th", {
+                          key: h.label,
+                          onClick: h.key ? () => setSortBy(active && isDesc ? h.key + "_asc" : h.key + "_desc") : undefined,
+                          style: { padding: "10px 12px", textAlign: "left", color: active ? C.cyan : C.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", cursor: h.key ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap" }
+                        }, h.label + (active ? (isDesc ? " \u25BE" : " \u25B4") : h.key ? " \u25BE" : ""));
+                      })
                     )
                   ),
                   React.createElement("tbody", {},
