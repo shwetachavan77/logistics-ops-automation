@@ -254,6 +254,12 @@
           call.notes && React.createElement(React.Fragment, {},
             section("Notes"),
             React.createElement("div", { style: { fontSize: 12, color: C.text2, lineHeight: 1.5, padding: "8px 10px", background: C.surface2, borderRadius: 6 } }, call.notes)
+          ),
+
+          // Transcript
+          call.transcript && React.createElement(React.Fragment, {},
+            section("Transcript"),
+            React.createElement("div", { style: { fontSize: 11, color: C.text2, lineHeight: 1.6, padding: "10px 12px", background: C.surface2, borderRadius: 6, maxHeight: 300, overflowY: "auto", whiteSpace: "pre-wrap", fontFamily: "'DM Sans', sans-serif" } }, call.transcript)
           )
         )
       );
@@ -325,22 +331,31 @@
         }
       }, []);
 
+      const [un, setUn] = useState("");
+
       const handleLogin = async () => {
         setAuthLoading(true); setAuthError("");
+        if (un.toLowerCase() !== "happyrollbot") { setAuthError("Invalid username"); setAuthLoading(false); return; }
         try {
           const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
           if (r.ok) { const d = await r.json(); sessionStorage.setItem("dash_auth", "1"); sessionStorage.setItem("dash_key", d.api_key || ""); setAuthed(true); }
-          else { setAuthError("Invalid access key"); }
+          else { setAuthError("Invalid credentials"); }
         } catch { setAuthError("Cannot reach server"); }
         setAuthLoading(false);
       };
 
+      const handleLogout = () => { sessionStorage.removeItem("dash_auth"); sessionStorage.removeItem("dash_key"); setAuthed(false); setM(null); };
+
       if (!authed) return React.createElement("div", { style: { background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" } },
         React.createElement("div", { style: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 32, width: 340, textAlign: "center" } },
           React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4 } }, "Carrier Sales Dashboard"),
-          React.createElement("div", { style: { fontSize: 12, color: C.text3, marginBottom: 20 } }, "Enter access key to continue"),
+          React.createElement("div", { style: { fontSize: 12, color: C.text3, marginBottom: 20 } }, "Sign in to continue"),
+          React.createElement("input", { type: "text", value: un, onChange: e => setUn(e.target.value),
+            placeholder: "Username",
+            style: { width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface2, color: C.text, fontSize: 13, marginBottom: 10, boxSizing: "border-box" }
+          }),
           React.createElement("input", { type: "password", value: pw, onChange: e => setPw(e.target.value), onKeyDown: e => { if (e.key === "Enter") handleLogin(); },
-            placeholder: "Access key",
+            placeholder: "Password",
             style: { width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface2, color: C.text, fontSize: 13, marginBottom: 12, boxSizing: "border-box" }
           }),
           authError && React.createElement("div", { style: { color: C.red, fontSize: 11, marginBottom: 8 } }, authError),
@@ -401,7 +416,7 @@
         { rounds: "3", count: (m.rounds_breakdown || {})["3"] || 0, color: C.purple },
       ];
       const totalBooked = m.calls_by_outcome.booked || 0;
-      const avgCallDur = "3:05";
+      const avgCallDur = "0:00";
       const ratePreservation = (100 - (m.avg_discount_from_loadboard || 0)).toFixed(1);
 
       const tabBtn = (id, label) => React.createElement("button", {
@@ -452,7 +467,11 @@
                 else alert("Reset failed.");
               },
               style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.surface2, color: C.text3, fontSize: 11, cursor: "pointer", fontWeight: 500 }
-            }, "\u00D7 Clear Data")
+            }, "\u00D7 Clear Data"),
+            React.createElement("button", {
+              onClick: handleLogout,
+              style: { padding: "5px 12px", borderRadius: 6, border: `1px solid ${C.red}25`, background: C.redDim, color: C.red, fontSize: 11, cursor: "pointer", fontWeight: 500 }
+            }, "Logout")
           )
         ),
 
@@ -480,7 +499,7 @@
             React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 } },
               React.createElement(Panel, { title: "Carrier Conversion Funnel", subtitle: "Where carriers drop off in the sales flow" },
                 (() => {
-                  const total = m.total_calls || 50;
+                  const total = m.total_calls || 0;
                   const vFailed = m.calls_by_outcome.verification_failed || 0;
                   const passedVet = total - vFailed;
                   const noMatch = m.calls_by_outcome.no_match || 0;
@@ -589,7 +608,7 @@
                 ),
                 React.createElement("div", { id: "roi-result", style: { display: "flex", flexDirection: "column", justifyContent: "center", gap: 8, padding: "12px 20px", borderRadius: 8, background: C.greenDim, border: `1px solid ${C.green}20` } },
                   (() => {
-                    const calls = m.total_calls || 50;
+                    const calls = m.total_calls || 0;
                     const avgMin = 12;
                     const hourly = 35;
                     const aiCost = 0.77;
@@ -740,6 +759,7 @@
                         { label: "Delta", key: "delta" },
                         { label: "Rnds", key: "rounds" },
                         { label: "Duration", key: "duration" },
+                        { label: "TR", key: null },
                       ].map(h => {
                         const active = h.key && sortBy.startsWith(h.key);
                         const isDesc = sortBy.endsWith("_desc");
@@ -777,7 +797,8 @@
                         React.createElement("td", { className: "mono", style: { padding: "8px 12px", fontSize: 11, color: C.text2 } }, listed),
                         React.createElement("td", { className: "mono", style: { padding: "8px 12px", fontSize: 11, color: deltaColor, fontWeight: 600 } }, deltaStr),
                         React.createElement("td", { style: { padding: "8px 12px", textAlign: "center", color: C.text2, fontSize: 11 } }, c.negotiation_rounds || 0),
-                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", color: C.text2, fontSize: 11 } }, dur)
+                        React.createElement("td", { className: "mono", style: { padding: "8px 12px", color: C.text2, fontSize: 11 } }, dur),
+                        React.createElement("td", { style: { padding: "8px 12px", textAlign: "center" } }, c.transcript ? React.createElement("span", { onClick: (e) => { e.stopPropagation(); setSelectedCall({ ...c, _showTranscript: true }); }, style: { color: C.cyan, fontSize: 11, cursor: "pointer", textDecoration: "underline" } }, "View") : React.createElement("span", { style: { color: C.text3, fontSize: 11 } }, "-"))
                       );
                     })
                   )
@@ -902,7 +923,7 @@
                 )
               ),
               React.createElement(Panel, { title: "Repeat Carrier Rate" },
-                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.green, textAlign: "center", padding: "14px 0" } }, `${m.repeat_carrier_rate || 12}%`),
+                React.createElement("div", { className: "mono", style: { fontSize: 32, fontWeight: 700, color: C.green, textAlign: "center", padding: "14px 0" } }, `${m.repeat_carrier_rate || 0}%`),
                 React.createElement("div", { style: { textAlign: "center", color: C.text2, fontSize: 11 } }, "Carriers calling back = trust")
               )
             ),
