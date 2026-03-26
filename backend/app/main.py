@@ -5,12 +5,14 @@ import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.api.routes import router, limiter
 from app.api.auth import APIKeyMiddleware
 from app.db.database import Database
+
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 @asynccontextmanager
@@ -54,10 +56,10 @@ app.add_middleware(APIKeyMiddleware)
 app.include_router(router)
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def dashboard():
     """Serve the metrics dashboard."""
-    html_path = Path(__file__).parent / "static" / "index.html"
+    html_path = STATIC_DIR / "index.html"
     if html_path.exists():
-        return HTMLResponse(content=html_path.read_text())
-    return HTMLResponse(content="<h1>Dashboard not found. Check /api/docs for API.</h1>")
+        return FileResponse(html_path, media_type="text/html")
+    return {"message": "Dashboard not found. Check /docs for API."}
