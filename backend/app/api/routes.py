@@ -319,6 +319,21 @@ async def reset_data(request: Request):
     return {"status": "ok", "calls_deleted": calls_deleted or 0, "loads_reset": loads_reset or 0}
 
 
+@router.post("/calls/cleanup")
+@limiter.limit("10/minute")
+async def cleanup_calls(request: Request):
+    """Delete calls that have no useful data (no carrier_mc and no carrier_name)."""
+    from app.db.database import Database
+    async with Database.pool.acquire() as conn:
+        deleted = await conn.fetchval(
+            "SELECT COUNT(*) FROM calls WHERE carrier_mc IS NULL AND carrier_name IS NULL"
+        )
+        await conn.execute(
+            "DELETE FROM calls WHERE carrier_mc IS NULL AND carrier_name IS NULL"
+        )
+    return {"status": "ok", "deleted": deleted or 0}
+
+
 @router.post("/loads/refresh")
 @limiter.limit("10/minute")
 async def refresh_loads(request: Request):
