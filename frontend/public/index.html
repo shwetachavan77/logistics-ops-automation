@@ -335,9 +335,8 @@
 
       const handleLogin = async () => {
         setAuthLoading(true); setAuthError("");
-        if (un.toLowerCase() !== "happyrollbot") { setAuthError("Invalid username"); setAuthLoading(false); return; }
         try {
-          const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
+          const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: un, password: pw }) });
           if (r.ok) { const d = await r.json(); sessionStorage.setItem("dash_auth", "1"); sessionStorage.setItem("dash_key", d.api_key || ""); setAuthed(true); }
           else { setAuthError("Invalid credentials"); }
         } catch { setAuthError("Cannot reach server"); }

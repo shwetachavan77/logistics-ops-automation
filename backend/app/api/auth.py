@@ -7,6 +7,7 @@ from starlette.responses import JSONResponse
 
 API_KEY = os.getenv("API_KEY", "carrier-sales-dev-key-2026")
 DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "0happyrobot")
+DASHBOARD_USERNAME = os.getenv("DASHBOARD_USERNAME", "happyrollbot")
 
 
 class APIKeyMiddleware(BaseHTTPMiddleware):

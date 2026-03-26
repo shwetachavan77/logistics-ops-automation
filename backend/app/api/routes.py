@@ -284,13 +284,14 @@ async def health():
 
 @router.post("/auth/login")
 async def dashboard_login(request: Request):
-    """Validate dashboard password. Returns API key on success for subsequent requests."""
-    from app.api.auth import DASHBOARD_PASSWORD, API_KEY
+    """Validate dashboard credentials. Returns API key on success."""
+    from app.api.auth import DASHBOARD_PASSWORD, DASHBOARD_USERNAME, API_KEY
     body = await request.json()
+    un = body.get("username", "")
     pw = body.get("password", "")
-    if pw == DASHBOARD_PASSWORD:
+    if un.lower() == DASHBOARD_USERNAME.lower() and pw == DASHBOARD_PASSWORD:
         return {"status": "ok", "api_key": API_KEY}
-    raise HTTPException(status_code=403, detail="Invalid password")
+    raise HTTPException(status_code=403, detail="Invalid credentials")
 
 
 @router.post("/reset")
