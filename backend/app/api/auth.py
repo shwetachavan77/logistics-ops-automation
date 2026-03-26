@@ -1,8 +1,9 @@
-"""API key auth middleware. All /api/* POST routes require x-api-key header."""
+"""API key auth middleware. All /api/* routes require x-api-key header."""
 
 import os
-from fastapi import Request, HTTPException
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 
 API_KEY = os.getenv("API_KEY", "carrier-sales-dev-key-2026")
 DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "0happyrobot")
@@ -28,15 +29,15 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         provided_key = request.headers.get("x-api-key")
 
         if not provided_key:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=401,
-                detail="Missing x-api-key header."
+                content={"detail": "Missing x-api-key header."}
             )
 
         if provided_key != API_KEY:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=403,
-                detail="Invalid API key."
+                content={"detail": "Invalid API key."}
             )
 
         return await call_next(request)
