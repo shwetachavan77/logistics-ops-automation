@@ -2,6 +2,7 @@
 
 import os
 import asyncpg
+from datetime import datetime as dt
 from typing import Optional
 from contextlib import asynccontextmanager
 
@@ -169,12 +170,20 @@ class Database:
                  "Dry Van", 600.00, "Government contract, ID required at delivery", 22000, "Office Supplies", 14, 140, "Standard pallets"),
             ]
 
+            parsed_loads = [
+                (row[0], row[1], row[2],
+                 dt.strptime(row[3], "%Y-%m-%d %H:%M") if isinstance(row[3], str) else row[3],
+                 dt.strptime(row[4], "%Y-%m-%d %H:%M") if isinstance(row[4], str) else row[4],
+                 row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12])
+                for row in sample_loads
+            ]
+
             await conn.executemany("""
                 INSERT INTO loads (
                     load_id, origin, destination, pickup_datetime, delivery_datetime,
                     equipment_type, loadboard_rate, notes, weight, commodity_type,
                     num_of_pieces, miles, dimensions
-                ) VALUES ($1, $2, $3, $4::timestamptz, $5::timestamptz, $6, $7, $8, $9, $10, $11, $12, $13)
-            """, sample_loads)
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            """, parsed_loads)
 
             print(f"Seeded {len(sample_loads)} loads into database")
