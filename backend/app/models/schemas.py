@@ -201,6 +201,7 @@ class DashboardMetrics(BaseModel):
     revenue_booked: float
     calls_over_time: List[dict]
     top_lanes: List[dict]
+    rounds_breakdown: Optional[dict] = {}
     loads_available: Optional[int] = 0
     loads_booked: Optional[int] = 0
     load_fill_rate: Optional[float] = 0

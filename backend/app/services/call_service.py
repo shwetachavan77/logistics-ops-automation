@@ -98,14 +98,16 @@ async def get_dashboard_metrics() -> DashboardMetrics:
 
         # Calls over time (last 30 days, grouped by day)
         time_rows = await conn.fetch("""
-            SELECT DATE(timestamp) as day, COUNT(*) as cnt
+            SELECT DATE(timestamp) as day,
+                   COUNT(*) as cnt,
+                   SUM(CASE WHEN outcome = 'booked' THEN 1 ELSE 0 END) as booked
             FROM calls
             WHERE timestamp >= NOW() - INTERVAL '30 days'
             GROUP BY DATE(timestamp)
             ORDER BY day
         """)
         calls_over_time = [
-            {"date": row["day"].isoformat(), "count": row["cnt"]}
+            {"date": row["day"].isoformat(), "calls": row["cnt"], "booked": row["booked"]}
             for row in time_rows
         ]
 
@@ -131,6 +133,15 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             for row in lane_rows
         ]
 
+        # Rounds breakdown
+        rounds_rows = await conn.fetch("""
+            SELECT negotiation_rounds as rounds, COUNT(*) as cnt
+            FROM calls
+            WHERE negotiation_rounds > 0
+            GROUP BY negotiation_rounds
+        """)
+        rounds_breakdown = {str(row["rounds"]): row["cnt"] for row in rounds_rows}
+
         return DashboardMetrics(
             total_calls=total,
             calls_by_outcome=calls_by_outcome,
@@ -141,6 +152,7 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             revenue_booked=float(revenue),
             calls_over_time=calls_over_time,
             top_lanes=top_lanes,
+            rounds_breakdown=rounds_breakdown,
             loads_available=await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE") or 0,
             loads_booked=await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = FALSE") or 0,
             load_fill_rate=round(
