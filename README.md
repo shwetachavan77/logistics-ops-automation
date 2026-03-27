@@ -1,172 +1,172 @@
-# Inbound Carrier Sales - AI Voice Agent
+# Inbound Carrier Sales Automation
 
-An AI-powered voice agent that automates inbound carrier sales calls for freight brokerages. Built on the HappyRobot platform with a custom FastAPI backend.
+AI-powered voice agent that automates inbound carrier sales calls for freight brokerages. Built on HappyRobot.ai with a custom FastAPI backend and real-time analytics dashboard.
 
-![Dashboard](dashboard-screenshot.png)
+**Live Dashboard:** [https://logistics-ops-automation-production.up.railway.app](https://logistics-ops-automation-production.up.railway.app)  
+**API Docs:** [https://logistics-ops-automation-production.up.railway.app/docs](https://logistics-ops-automation-production.up.railway.app/docs)
 
-## Live Deployments
+---
 
-| Service | URL |
-|---------|-----|
-| **Dashboard** | [logistics-ops-automation-production.up.railway.app](https://logistics-ops-automation-production.up.railway.app/) |
-| **API Docs** | [logistics-ops-automation-production.up.railway.app/docs](https://logistics-ops-automation-production.up.railway.app/docs) |
-| **Health Check** | [logistics-ops-automation-production.up.railway.app/api/health](https://logistics-ops-automation-production.up.railway.app/api/health) |
+## What It Does
+
+A carrier calls in looking for a load to haul. The AI agent (Sarah) handles the entire workflow:
+
+1. **Verifies the carrier** via live FMCSA SAFER API (MC number + company name two-factor check)
+2. **Searches available loads** by origin, destination, and equipment type
+3. **Pitches the load** with full details (route, miles, weight, commodity, rate, pickup/delivery times)
+4. **Negotiates the rate** through up to 3 rounds using a server-side pricing engine
+5. **Transfers to a human rep** for final booking confirmation
+6. **Logs everything** to a real-time analytics dashboard
 
 ## Architecture
 
 ```
-Carrier calls in (web call / phone)
-       |
-       v
-  HappyRobot Platform
-  - Inbound Voice Agent (Sarah)
-  - 4 Tools call external API mid-conversation
-  - Real-time sentiment classification
-  - Contact intelligence (carrier memory)
-  - Post-call: Classify + Extract + Webhook
-  - Conditional: if booked -> SMS confirmation
-       |
-       v
-  FastAPI Backend (Railway)
-  - FMCSA carrier verification (real API)
-  - Load database search (PostgreSQL, fuzzy matching)
-  - Negotiation engine (3-round, server-side pricing)
-  - Rate limiting (SlowAPI)
-  - Null/type handling for voice agent payloads
-  - Call logging + metrics aggregation
-       |
-       v
-  Metrics Dashboard (React 18 + Recharts)
-  - 4 tabs: Overview, Call Log, Lanes, Performance
-  - 6 KPI cards, area charts, donut charts, bar charts
-  - Click-to-expand call detail drawer
-  - AI vs Human performance comparison
-  - Hidden demo mode toggle (triple-click logo)
+Carrier Calls In
+       │
+       ▼
+┌──────────────────────────┐
+│   HappyRobot Platform    │
+│   Voice Agent (Sarah)    │
+│   GPT-4.1                │
+│   4 Tools ──────────────────┐
+│   Post-call: Classify +  │  │
+│   Extract + Webhook      │  │
+└──────────────────────────┘  │
+                              ▼
+                    ┌──────────────────┐
+                    │  FastAPI Backend  │
+                    │  (Railway)        │
+                    ├──────────────────┤
+                    │ FMCSA API        │
+                    │ Load Search      │
+                    │ Negotiation      │
+                    │ Call Logging     │
+                    │ Metrics          │
+                    └────────┬─────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │   PostgreSQL     │
+                    │   (Railway)      │
+                    │   loads, calls,  │
+                    │   negotiations   │
+                    └──────────────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │   Dashboard      │
+                    │   React 18       │
+                    │   4 tabs         │
+                    └──────────────────┘
 ```
 
-## Features
+## Key Features
 
 ### Voice Agent
-- FMCSA carrier verification with company name confirmation (fraud prevention)
-- 2 MC attempt limit per call, 4+ failed calls from same number -> immediate transfer
-- Fuzzy load search with "anywhere" handling
-- 3-round negotiation with server-side pricing isolation
-- Real-time sentiment classification during calls
-- Contact intelligence - remembers carriers across calls
-- Off-topic guardrails (won't answer unrelated questions)
-- Number pronunciation rules for clarity
-- Post-booking SMS confirmation via Twilio
+- FMCSA carrier verification with live federal API (no mocks)
+- Two-factor identity check: MC number + company name confirmation
+- Hard limit of 2 MC verification attempts per call
+- Full load pitch with all shipment details
+- 3-round negotiation with server-side pricing engine
+- Agent never sees real loadboard rates or pricing strategy
+- Conversational pausing after every piece of information
+- Freight-industry number pronunciation (e.g., "twenty-eight fifty" not "two thousand eight hundred fifty")
+- Guardrails for off-topic questions, spam, and AI identity queries
 
-### Backend API
-- **Rate limiting** - 30/min verify, 60/min search, 30/min negotiate
-- **Null handling** - cleans "null", "", None from voice agent payloads
-- **Flexible schemas** - accepts int/string/float for MC numbers, rates
-- **Load availability** - marks loads unavailable after booking
-- **Demo data** - 15 seed loads, 50 seed calls for dashboard
+### Pricing Strategy
+- Agent quotes 20% below loadboard rate to create negotiation room
+- Carrier negotiates upward, engine manages acceptance caps (100% / 105% / 110%)
+- Even after negotiation, brokerage typically pays at or under budget
+- All pricing logic is server-side; agent has zero visibility into real rates
 
-### Dashboard
-- **Overview** - Total calls, booking rate, revenue, rate preservation, avg rounds, answer rate
-- **Call Log** - Clickable table with slide-out detail drawer
-- **Lanes** - Top origin-destination pairs with conversion rates
-- **Performance** - Rate preservation, cost per booking, AI vs Human comparison
+### Dashboard (4 Tabs)
+- **Overview:** KPIs, conversion funnel, outcome/sentiment charts, negotiation depth, lane activity map, ROI calculator, alerts
+- **Call Log:** Sortable/filterable table, click-to-open detail drawer with FMCSA status, shipment details, negotiation history, transcript, SMS, notes
+- **Lanes:** Load board database, fill rate, top lanes, reseed button
+- **Performance:** Rate preservation, cost per booking, AI vs Human comparison table
+
+### Security
+- API key authentication on all endpoints
+- Server-side dashboard login (no credentials in frontend HTML)
+- HTTPS via Railway automatic TLS
+- Rate limiting via slowapi
+- FMCSA API key stored as environment variable
 
 ## API Endpoints
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/verify-carrier` | POST | API Key | FMCSA carrier verification |
-| `/api/search-loads` | POST | API Key | Search available loads |
-| `/api/negotiate` | POST | API Key | Evaluate carrier price offer |
-| `/api/transfer` | POST | API Key | Mock call transfer |
-| `/api/calls/log` | POST | API Key | Log completed call data |
-| `/api/metrics` | GET | None | Dashboard metrics |
-| `/api/calls/recent` | GET | None | Recent call log |
-| `/api/loads` | GET | None | List all loads |
-| `/api/health` | GET | None | Health check |
-| `/` | GET | None | Dashboard UI |
+All endpoints require `x-api-key` header except `/api/health` and `/api/auth/login`.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/verify-carrier` | Verify MC via live FMCSA API |
+| POST | `/api/search-loads` | Search loads (returns 20% discounted rate) |
+| POST | `/api/negotiate` | Evaluate carrier offer (3-round engine) |
+| POST | `/api/transfer` | Mock call transfer to human rep |
+| POST | `/api/calls/log` | Log call with all extracted data |
+| POST | `/api/calls/update-sms` | Patch SMS text onto existing call |
+| POST | `/api/calls/backfill` | Normalize and fix existing records |
+| POST | `/api/calls/cleanup` | Delete calls with no carrier data |
+| POST | `/api/alerts/missed-opportunity` | Log near-miss with gap analysis |
+| GET | `/api/metrics` | Aggregated dashboard metrics |
+| GET | `/api/calls/recent` | Recent calls with load details (JOIN) |
+| GET | `/api/calls/{id}/negotiations` | Round-by-round negotiation history |
+| GET | `/api/loads/all` | All loads with availability status |
+| POST | `/api/loads/refresh` | Reset dates, preserve booked loads |
+| POST | `/api/loads/reseed` | Delete and repopulate all loads |
+| POST | `/api/reset` | Nuclear reset (clears all data) |
+| POST | `/api/auth/login` | Dashboard login |
 
 ## Quick Start
 
 ### Docker Compose (local)
 
 ```bash
-git clone <repo-url>
-cd happyrobot-carrier-sales
+git clone https://github.com/shwetachavan77/logistics-ops-automation.git
+cd logistics-ops-automation
 docker compose up --build
 ```
 
-- API: http://localhost:8000/docs
-- Dashboard: http://localhost:8000
+### Railway (production)
 
-### Railway (cloud)
+The app auto-deploys on git push to main. Environment variables:
 
-1. Push to GitHub
-2. Create project at railway.app
-3. Add PostgreSQL plugin
-4. Add service from GitHub repo
-5. Set environment variables:
-   - `API_KEY` - API authentication key
-   - `DEMO_MODE=true` - Seeds demo data
-   - `FMCSA_API_KEY` - FMCSA SAFER API web key
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string (set by Railway) |
+| `API_KEY` | API key for endpoint authentication |
+| `FMCSA_API_KEY` | FMCSA SAFER System web key |
+| `DASHBOARD_USERNAME` | Dashboard login username |
+| `DASHBOARD_PASSWORD` | Dashboard login password |
+| `DEMO_MODE` | Set to `false` in production |
 
-### Manual
+## Test MC Numbers
 
-```bash
-export DATABASE_URL=postgresql://user:pass@host:5432/carrier_sales
-export API_KEY=your-key
-export DEMO_MODE=true
-export FMCSA_API_KEY=your-fmcsa-key
-
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | Local dev default |
-| `API_KEY` | API key for endpoint auth | `carrier-sales-dev-key-2026` |
-| `FMCSA_API_KEY` | FMCSA SAFER Web Services key | Empty (uses mock) |
-| `DEMO_MODE` | Seed demo data on startup | `true` |
-
-## Negotiation Strategy
-
-Server-side only. Pricing logic never exposed to the voice agent or caller.
-
-| Round | Accept if carrier offers <= | Counter at |
-|-------|----------------------------|------------|
-| 1 | 100% of loadboard rate | Full rate |
-| 2 | 105% of loadboard rate | 105% |
-| 3 (final) | 110% of loadboard rate | Reject if above |
-
-## Security Features
-
-- **Server-side pricing isolation** - Floor rates never sent to the LLM
-- **MC verification with name confirmation** - Carrier must say the company name
-- **Per-call attempt limits** - 2 MC failures = forced transfer
-- **Cross-call pattern detection** - 4+ failed calls = immediate transfer
-- **API key authentication** - All POST endpoints protected
-- **Rate limiting** - Prevents abuse
-- **Off-topic guardrails** - Agent stays on freight topics only
-
-## HappyRobot Platform Setup
-
-See `happyrobot-config/` for all platform configuration:
-- `agent-prompt-final.md` - Complete voice agent prompt with all rules
-- `tools-config.json` - 4 tool definitions with webhook configs
-- `workflow-config.json` - Full workflow structure with post-call automation
-- `knowledge-base-loads.md` - Load inventory reference data
+| MC Number | Company | Result |
+|-----------|---------|--------|
+| 260913 | PAINTHORSE EXPRESS INC | PASS |
+| 382806 | COOK HAULING LLC | PASS |
+| 780050 | VIP EXPRESS LOGISTICS LLC | PASS |
+| 100000 | C & C PRESTIGE LOGISTICS LLC | PASS |
+| 150000 | (does not exist) | FAIL |
+| 999999 | (does not exist) | FAIL |
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Backend | Python 3.12, FastAPI, asyncpg, httpx, SlowAPI |
-| Database | PostgreSQL 16 |
-| Dashboard | React 18, Recharts (CDN) |
-| Voice Agent | HappyRobot Platform, GPT-4.1 |
-| FMCSA API | SAFER Web Services (QCMobile) |
-| Deployment | Railway (backend + dashboard), Docker |
-| Infrastructure | Docker Compose (local dev) |
+- **Voice Agent:** HappyRobot.ai, GPT-4.1
+- **Backend:** Python 3.12, FastAPI, asyncpg, httpx, slowapi
+- **Database:** PostgreSQL (Railway managed)
+- **Hosting:** Railway (Docker, auto-deploy)
+- **FMCSA:** SAFER System live API
+- **SMS:** Twilio via HappyRobot
+- **Dashboard:** React 18, Recharts, single-file HTML
+
+## HappyRobot Platform Config
+
+See `happyrobot-config/` for platform configuration:
+- `agent-prompt-final.md` - Voice agent prompt
+- `tools-config.json` - Tool definitions
+- `workflow-config.json` - Workflow structure
+- `knowledge-base-loads.md` - Load data reference
+- `negotiation-strategy.md` - Pricing strategy documentation
+
+## Author
+
+Shweta Chavan
