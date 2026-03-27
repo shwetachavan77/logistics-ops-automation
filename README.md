@@ -3,7 +3,8 @@
 AI-powered voice agent that automates inbound carrier sales calls for freight brokerages. Built on HappyRobot.ai with a custom FastAPI backend and real-time analytics dashboard.
 
 **Live Dashboard:** [https://logistics-ops-automation-production.up.railway.app](https://logistics-ops-automation-production.up.railway.app)  
-**API Docs:** [https://logistics-ops-automation-production.up.railway.app/docs](https://logistics-ops-automation-production.up.railway.app/docs)
+**API Docs:** [https://logistics-ops-automation-production.up.railway.app/docs](https://logistics-ops-automation-production.up.railway.app/docs)  
+**Kanban Board:** [https://happyrobot-kanban-production.up.railway.app](https://happyrobot-kanban-production.up.railway.app)
 
 ---
 
