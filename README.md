@@ -10,6 +10,19 @@ AI-powered voice agent that automates inbound carrier sales calls for freight br
 
 ## What It Does
 
+### Dashboard Screenshots
+
+**Overview Tab** - KPIs, conversion funnel, outcomes, call volume, sentiment, lane map
+![Overview](docs/dashboard-overview.png)
+
+**Call Log Tab** - Sortable call table with detail drawer showing transcript, negotiation history, SMS
+![Call Log](docs/dashboard-calllog.png)
+
+**Lanes Tab** - Load board database, fill rate, top lanes, reseed button
+![Lanes](docs/dashboard-lanes.png)
+
+---
+
 A carrier calls in looking for a load to haul. The AI agent (Sarah) handles the entire workflow:
 
 1. **Verifies the carrier** via live FMCSA SAFER API (MC number + company name two-factor check)
