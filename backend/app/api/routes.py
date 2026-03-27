@@ -366,19 +366,18 @@ async def reseed_loads(request: Request):
     async with Database.pool.acquire() as conn:
         await conn.execute("DELETE FROM loads")
     await Database.seed_loads()
-    # Update dates to start tomorrow
-    from datetime import datetime, timedelta
     async with Database.pool.acquire() as conn:
-        earliest = await conn.fetchval("SELECT MIN(pickup_datetime) FROM loads")
-        if earliest:
-            now = datetime.utcnow()
-            tomorrow = now.replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=1)
-            shift = tomorrow - earliest
-            await conn.execute("""
-                UPDATE loads SET
-                    pickup_datetime = pickup_datetime + $1,
-                    delivery_datetime = delivery_datetime + $1
-            """, shift)
+        await conn.execute("""
+            UPDATE loads SET
+                pickup_datetime = pickup_datetime + (
+                    (NOW() + INTERVAL '1 day')::date + TIME '06:00:00'
+                    - (SELECT MIN(pickup_datetime) FROM loads)
+                ),
+                delivery_datetime = delivery_datetime + (
+                    (NOW() + INTERVAL '1 day')::date + TIME '06:00:00'
+                    - (SELECT MIN(pickup_datetime) FROM loads)
+                )
+        """)
         count = await conn.fetchval("SELECT COUNT(*) FROM loads")
     return {"status": "ok", "loads_seeded": count}
 
@@ -528,19 +527,18 @@ async def refresh_loads(request: Request):
     """Reset loads to available and update pickup/delivery dates to be relative to today."""
     from app.db.database import Database
     async with Database.pool.acquire() as conn:
-        # Reset all loads to available
         await conn.execute("UPDATE loads SET is_available = TRUE")
-        # Shift all dates so the earliest pickup is tomorrow
-        earliest = await conn.fetchval("SELECT MIN(pickup_datetime) FROM loads")
-        if earliest:
-            from datetime import datetime, timedelta
-            now = datetime.utcnow()
-            tomorrow = now.replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=1)
-            shift = tomorrow - earliest
-            await conn.execute("""
-                UPDATE loads SET
-                    pickup_datetime = pickup_datetime + $1,
-                    delivery_datetime = delivery_datetime + $1
-            """, shift)
+        # Shift dates using SQL so earliest pickup is tomorrow at 6 AM
+        await conn.execute("""
+            UPDATE loads SET
+                pickup_datetime = pickup_datetime + (
+                    (NOW() + INTERVAL '1 day')::date + TIME '06:00:00'
+                    - (SELECT MIN(pickup_datetime) FROM loads)
+                ),
+                delivery_datetime = delivery_datetime + (
+                    (NOW() + INTERVAL '1 day')::date + TIME '06:00:00'
+                    - (SELECT MIN(pickup_datetime) FROM loads)
+                )
+        """)
         unbooked = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
-    return {"status": "ok", "message": f"All {unbooked} loads reset and dates updated to start tomorrow", "unbooked": unbooked}
+    return {"status": "ok", "message": f"All {unbooked} loads reset and dates updated", "unbooked": unbooked}
