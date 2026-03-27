@@ -141,6 +141,46 @@ async def get_dashboard_metrics() -> DashboardMetrics:
             revenue_booked=float(revenue),
             calls_over_time=calls_over_time,
             top_lanes=top_lanes,
+            loads_available=await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE") or 0,
+            loads_booked=await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = FALSE") or 0,
+            load_fill_rate=round(
+                (await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = FALSE") or 0) /
+                max(await conn.fetchval("SELECT COUNT(*) FROM loads") or 1, 1) * 100, 1),
+            avg_rate_per_mile=str(round(float(
+                await conn.fetchval("""
+                    SELECT COALESCE(AVG(c.agreed_rate / NULLIF(l.miles, 0)), 0)
+                    FROM calls c JOIN loads l ON c.load_id = l.load_id
+                    WHERE c.outcome = 'booked' AND c.agreed_rate IS NOT NULL AND l.miles > 0
+                """) or 0), 2)),
+            avg_call_duration=float(
+                await conn.fetchval("SELECT COALESCE(AVG(call_duration_seconds), 0) FROM calls WHERE call_duration_seconds > 0") or 0),
+            round1_close_rate=round(float(
+                await conn.fetchval("""
+                    SELECT COALESCE(
+                        AVG(CASE WHEN negotiation_rounds <= 1 AND outcome = 'booked' THEN 100.0 ELSE 0 END),
+                    0) FROM calls WHERE outcome = 'booked'
+                """) or 0), 1),
+            floor_rate_hit_rate=round(float(
+                await conn.fetchval("""
+                    SELECT COALESCE(
+                        AVG(CASE WHEN c.agreed_rate <= l.loadboard_rate THEN 100.0 ELSE 0 END),
+                    0) FROM calls c JOIN loads l ON c.load_id = l.load_id
+                    WHERE c.outcome = 'booked' AND c.agreed_rate IS NOT NULL
+                """) or 0), 1),
+            avg_rate_given_up=round(float(
+                await conn.fetchval("""
+                    SELECT COALESCE(AVG(c.agreed_rate - l.loadboard_rate * 0.8), 0)
+                    FROM calls c JOIN loads l ON c.load_id = l.load_id
+                    WHERE c.outcome = 'booked' AND c.agreed_rate IS NOT NULL
+                """) or 0), 0),
+            repeat_carrier_rate=round(float(
+                await conn.fetchval("""
+                    SELECT COALESCE(
+                        (SELECT COUNT(DISTINCT carrier_mc) FROM calls
+                         WHERE carrier_mc IN (SELECT carrier_mc FROM calls GROUP BY carrier_mc HAVING COUNT(*) > 1))
+                        * 100.0 / NULLIF(COUNT(DISTINCT carrier_mc), 0),
+                    0) FROM calls WHERE carrier_mc IS NOT NULL
+                """) or 0), 1),
         )
 
 
