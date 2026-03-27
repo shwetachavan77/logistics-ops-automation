@@ -367,17 +367,17 @@ async def reseed_loads(request: Request):
         await conn.execute("DELETE FROM loads")
     await Database.seed_loads()
     async with Database.pool.acquire() as conn:
-        await conn.execute("""
-            UPDATE loads SET
-                pickup_datetime = pickup_datetime + (
-                    (NOW() + INTERVAL '1 day')::date + TIME '06:00:00'
-                    - (SELECT MIN(pickup_datetime) FROM loads)
-                ),
-                delivery_datetime = delivery_datetime + (
-                    (NOW() + INTERVAL '1 day')::date + TIME '06:00:00'
-                    - (SELECT MIN(pickup_datetime) FROM loads)
-                )
+        # Calculate shift once
+        shift = await conn.fetchval("""
+            SELECT (NOW() + INTERVAL '1 day')::timestamp - MIN(pickup_datetime)
+            FROM loads
         """)
+        if shift:
+            await conn.execute("""
+                UPDATE loads SET
+                    pickup_datetime = pickup_datetime + $1,
+                    delivery_datetime = delivery_datetime + $1
+            """, shift)
         count = await conn.fetchval("SELECT COUNT(*) FROM loads")
     return {"status": "ok", "loads_seeded": count}
 
@@ -528,17 +528,15 @@ async def refresh_loads(request: Request):
     from app.db.database import Database
     async with Database.pool.acquire() as conn:
         await conn.execute("UPDATE loads SET is_available = TRUE")
-        # Shift dates using SQL so earliest pickup is tomorrow at 6 AM
-        await conn.execute("""
-            UPDATE loads SET
-                pickup_datetime = pickup_datetime + (
-                    (NOW() + INTERVAL '1 day')::date + TIME '06:00:00'
-                    - (SELECT MIN(pickup_datetime) FROM loads)
-                ),
-                delivery_datetime = delivery_datetime + (
-                    (NOW() + INTERVAL '1 day')::date + TIME '06:00:00'
-                    - (SELECT MIN(pickup_datetime) FROM loads)
-                )
+        shift = await conn.fetchval("""
+            SELECT (NOW() + INTERVAL '1 day')::timestamp - MIN(pickup_datetime)
+            FROM loads
         """)
+        if shift:
+            await conn.execute("""
+                UPDATE loads SET
+                    pickup_datetime = pickup_datetime + $1,
+                    delivery_datetime = delivery_datetime + $1
+            """, shift)
         unbooked = await conn.fetchval("SELECT COUNT(*) FROM loads WHERE is_available = TRUE")
     return {"status": "ok", "message": f"All {unbooked} loads reset and dates updated", "unbooked": unbooked}
