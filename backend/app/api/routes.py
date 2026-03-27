@@ -503,6 +503,19 @@ async def backfill_calls(request: Request):
         """)
         fixes["negotiation_rounds_backfilled"] = rounds_fixed or 0
 
+        # 6. Mark loads as unavailable for booked calls
+        loads_marked = await conn.fetchval("""
+            UPDATE loads SET is_available = FALSE
+            FROM calls
+            WHERE loads.load_id = calls.load_id
+            AND LOWER(calls.outcome) = 'booked'
+            AND loads.is_available = TRUE
+        """)
+        booked_loads = await conn.fetchval("""
+            SELECT COUNT(*) FROM loads WHERE is_available = FALSE
+        """)
+        fixes["loads_marked_booked"] = booked_loads or 0
+
         total_calls = await conn.fetchval("SELECT COUNT(*) FROM calls")
         fixes["total_calls"] = total_calls or 0
 

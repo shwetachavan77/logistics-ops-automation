@@ -38,7 +38,7 @@ async def log_call(call: CallLog) -> CallLogResponse:
         )
 
         # If the load was booked, mark it unavailable
-        if call.outcome == "booked" and call.load_id:
+        if str(call.outcome).lower() == "booked" and call.load_id:
             await conn.execute(
                 "UPDATE loads SET is_available = FALSE WHERE load_id = $1",
                 call.load_id
