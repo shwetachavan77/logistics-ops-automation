@@ -168,6 +168,15 @@ class Database:
                  "Dry Van", 700.00, "Auto parts assembly line delivery - time-critical", 30000, "Auto Parts", 16, 280, "Rack-loaded"),
                 ("LD-1015", "Philadelphia, PA", "Washington, DC", "2026-03-26 10:00", "2026-03-26 18:00",
                  "Dry Van", 600.00, "Government contract, ID required at delivery", 22000, "Office Supplies", 14, 140, "Standard pallets"),
+                # Loads from demo calls - must persist
+                ("LD-1016", "Nashville, TN", "Charlotte, NC", "2026-03-26 22:34", "2026-03-27 09:34",
+                 "Flatbed", 1160.00, "Team drivers preferred", 27505, "Textiles", 22, 392, "Standard pallets"),
+                ("LD-1018", "Miami, FL", "Detroit, MI", "2026-03-29 02:34", "2026-03-30 04:34",
+                 "Flatbed", 2010.00, "No-touch freight, dock-to-dock", 37335, "Paper Products", 9, 717, "Standard pallets"),
+                ("LD-1020", "Minneapolis, MN", "Seattle, WA", "2026-03-28 12:34", "2026-03-30 06:34",
+                 "Flatbed", 3280.00, "Standard freight", 40264, "Consumer Goods", 24, 1039, "Standard pallets"),
+                ("LD-1023", "Pittsburgh, PA", "Nashville, TN", "2026-03-28 02:06", "2026-03-28 18:06",
+                 "Box Truck", 430.00, "No special requirements", 30530, "Paper Products", 6, 155, "Standard pallets"),
             ]
 
             parsed_loads = [
