@@ -345,7 +345,17 @@ async def get_all_loads_with_status(request: Request):
     from app.db.database import Database
     async with Database.pool.acquire() as conn:
         rows = await conn.fetch("SELECT * FROM loads ORDER BY load_id")
-        return {"loads": [dict(row) for row in rows]}
+        loads = []
+        for row in rows:
+            d = dict(row)
+            # Convert types that don't serialize to JSON
+            for k, v in d.items():
+                if hasattr(v, 'isoformat'):
+                    d[k] = v.isoformat()
+                elif hasattr(v, 'is_finite'):  # Decimal
+                    d[k] = float(v)
+            loads.append(d)
+        return {"loads": loads}
 
 
 @router.post("/loads/reseed")
